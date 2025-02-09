@@ -7,6 +7,7 @@ import (
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/app"
 	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
+	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
 	"github.com/hiromaily/hatena-fake-detector/pkg/handler"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
@@ -22,9 +23,10 @@ type registry struct {
 	targetHandler handler.Handler
 
 	// common instance
-	logger         logger.Logger
-	influxdbClient influxdb2.Client
-	bookmarkRepo   repository.BookmarkRepositorier
+	logger          logger.Logger
+	influxdbClient  influxdb2.Client
+	bookmarkRepo    repository.BookmarkRepositorier
+	bookmarkFetcher fetcher.BookmarkFetcher
 }
 
 func NewRegistry(
@@ -88,6 +90,7 @@ func (r *registry) newFetchUsecase() usecase.FetchUsecaser {
 	return usecase.NewFetchUsecase(
 		r.newLogger(),
 		r.newBookmarkRepository(),
+		r.newBookmarkFetcher(),
 	)
 }
 
@@ -124,4 +127,11 @@ func (r *registry) newInfluxdbClient() influxdb2.Client {
 		r.influxdbClient = influxdb2.NewClient(r.envConf.InfluxdbURL, r.envConf.InfluxdbToken)
 	}
 	return r.influxdbClient
+}
+
+func (r *registry) newBookmarkFetcher() fetcher.BookmarkFetcher {
+	if r.bookmarkFetcher == nil {
+		r.bookmarkFetcher = fetcher.NewBookmarkFetcher(r.newLogger())
+	}
+	return r.bookmarkFetcher
 }

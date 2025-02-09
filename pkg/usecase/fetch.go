@@ -2,13 +2,11 @@ package usecase
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
+	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 )
@@ -18,14 +16,16 @@ type FetchUsecaser interface {
 }
 
 type fetchUsecase struct {
-	logger       logger.Logger
-	bookmarkRepo repository.BookmarkRepositorier
-	urls         []string
+	logger          logger.Logger
+	bookmarkRepo    repository.BookmarkRepositorier
+	bookmarkFetcher fetcher.BookmarkFetcher
+	urls            []string
 }
 
 func NewFetchUsecase(
 	logger logger.Logger,
 	bookmarkRepo repository.BookmarkRepositorier,
+	bookmarkFetcher fetcher.BookmarkFetcher,
 ) *fetchUsecase {
 
 	// target URL list
@@ -37,50 +37,11 @@ func NewFetchUsecase(
 	}
 
 	return &fetchUsecase{
-		logger:       logger,
-		bookmarkRepo: bookmarkRepo,
-		urls:         urls,
+		logger:          logger,
+		bookmarkRepo:    bookmarkRepo,
+		bookmarkFetcher: bookmarkFetcher,
+		urls:            urls,
 	}
-}
-
-func fetchBookmarkData(url string) (entities.Bookmark, error) {
-	apiUrl := "https://b.hatena.ne.jp/entry/json/" + url
-
-	resp, err := http.Get(apiUrl)
-	if err != nil {
-		return entities.Bookmark{}, err
-	}
-	defer resp.Body.Close()
-
-	var data struct {
-		Title     string `json:"title"`
-		Count     int    `json:"count"`
-		Bookmarks []struct {
-			User      string `json:"user"`
-			Comment   string `json:"comment"`
-			Timestamp string `json:"timestamp"`
-		} `json:"bookmarks"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return entities.Bookmark{}, err
-	}
-
-	users := make(map[string]entities.User)
-	for _, bookmark := range data.Bookmarks {
-		users[bookmark.User] = entities.User{
-			Name:        bookmark.User,
-			IsDeleted:   false,
-			IsCommented: bookmark.Comment != "",
-		}
-	}
-
-	return entities.Bookmark{
-		Title:     data.Title,
-		Count:     data.Count,
-		Users:     users,
-		Timestamp: time.Now(),
-	}, nil
 }
 
 func (f *fetchUsecase) Execute(ctx context.Context) error {
@@ -95,7 +56,7 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 				// 初回実行時の初期化
 				existingBookmark.Users = make(map[string]entities.User)
 			} else {
-				fmt.Printf("Error loading existing data for %s: %v\n", url, err)
+				f.logger.Error("failed to call bookmarkRepo.ReadEntity()", "url", url, "error", err)
 				continue
 			}
 		}
@@ -110,9 +71,9 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		}
 
 		// 新しいデータを取得
-		newBookmark, err := fetchBookmarkData(url)
+		newBookmark, err := f.bookmarkFetcher.Entity(url)
 		if err != nil {
-			fmt.Printf("Error fetching data for %s: %v\n", url, err)
+			f.logger.Error("failed to call fetchBookmarkData()", "url", url, "error", err)
 			continue
 		}
 
@@ -132,7 +93,7 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		// データを保存
 		err = f.bookmarkRepo.WriteEntity(ctx, url, existingBookmark)
 		if err != nil {
-			fmt.Printf("Error writing data to InfluxDB for %s: %v\n", url, err)
+			f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", url, "error", err)
 			continue
 		}
 		f.logger.Info("data saved", "url", url)

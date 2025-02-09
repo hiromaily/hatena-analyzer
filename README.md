@@ -91,23 +91,23 @@ JSONは以下のような構造になっています。
 
 ```json
 {
-    "url": "https://note.com/simplearchitect/n/nadc0bcdd5b3d",
-    "eid": "4765841514130150593",
+    "url": "https://example.com/news-0001",
+    "eid": "4765841514130150390",
     "bookmarks": [
-        {
-            "user": "atoma5",
-            "timestamp": "2025/02/05 21:30",
-            "comment": ""
-        },
         {
             "user": "foo",
             "timestamp": "2025/02/05 21:32",
-            "comment": "bar"
+            "comment": "foo foo foo"
+        },
+        {
+            "user": "bar",
+            "timestamp": "2025/02/05 22:10",
+            "comment": "bar bar bar"
         }
     ],
-    "title": "\u51c4\u3044\u3084\u3064\u306b\u306a\u308b\u65b9\u6cd5\uff5c\u725b\u5c3e\u3000\u525b",
-    "count": 1431,
-    "requested_url": "https://note.com/simplearchitect/n/nadc0bcdd5b3d"
+    "title": "\u30c6\u30b9\u30c8\u30c6\u30b9\u30c8\u30c6\u30b9\u30c8",
+    "count": 123,
+    "requested_url": "https://example.com/news-0001"
 }
 ```
 

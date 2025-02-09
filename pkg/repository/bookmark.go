@@ -89,7 +89,11 @@ func (i *influxDBBookmarkRepository) ReadEntity(ctx context.Context, url string)
 	return &bookmark, nil
 }
 
-func (i *influxDBBookmarkRepository) WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error {
+func (i *influxDBBookmarkRepository) WriteEntity(
+	ctx context.Context,
+	url string,
+	bookmark *entities.Bookmark,
+) error {
 	writeAPI := i.dbClient.WriteAPIBlocking(i.org, i.bucket)
 
 	tags := map[string]string{"url": url}
