@@ -44,19 +44,6 @@ func main() {
 	// Execute application
 	err = app.Run()
 	if err != nil {
-		reg.Logger().Error("Failed to run application", "error", err)
+		reg.Logger().Error("failed to run application", "error", err)
 	}
-
-	// // Initialize usecase
-	// fetchUsecaser := usecase.NewFetchUsecase(
-	// 	slogLogger,
-	// 	cfg.InfluxdbURL,
-	// 	cfg.InfluxdbToken,
-	// 	cfg.InfluxdbBucket,
-	// 	cfg.InfluxdbOrg,
-	// )
-	// err = fetchUsecaser.Execute(context.Background())
-	// if err != nil {
-	// 	slogLogger.Error("Failed to fetch bookmark data", "error", err)
-	// }
 }

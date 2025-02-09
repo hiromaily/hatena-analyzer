@@ -21,6 +21,24 @@ A氏のサイトのURLは事前にプログラムで登録しておく。もし�
 - つまり、すべてのURLに対しての全ユーザー情報として、過去のブックマーク数、A氏サイトのブックマーク数、この２つの情報が出せれば良い
 - TODO: 不正をスコア化する
 
+## 利用するストレージ
+
+### InfluxDB
+
+- bucket: Bookmark
+- measurement(table): url
+- tag
+  - title: URLのタイトル
+- field
+  - count: ブックマーク数
+  - user_num: ユーザー数
+
+### MongoDB
+
+
+
+
+
 ## [はてなブックマーク REST API](https://developer.hatena.ne.jp/ja/documents/bookmark/apis/rest/)
 
 ### [はてなブックマーク エントリー情報取得API](https://developer.hatena.ne.jp/ja/documents/bookmark/apis/getinfo)
@@ -77,10 +95,14 @@ JSONは以下のような構造になっています。
     "eid": "4765841514130150593",
     "bookmarks": [
         {
-            "tags": [],
             "user": "atoma5",
             "timestamp": "2025/02/05 21:30",
             "comment": ""
+        },
+        {
+            "user": "foo",
+            "timestamp": "2025/02/05 21:32",
+            "comment": "bar"
         }
     ],
     "title": "\u51c4\u3044\u3084\u3064\u306b\u306a\u308b\u65b9\u6cd5\uff5c\u725b\u5c3e\u3000\u525b",

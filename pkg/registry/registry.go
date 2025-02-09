@@ -1,15 +1,17 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/app"
 	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
 	"github.com/hiromaily/hatena-fake-detector/pkg/handler"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
+	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 )
 
 type registry struct {
@@ -20,7 +22,9 @@ type registry struct {
 	targetHandler handler.Handler
 
 	// common instance
-	logger logger.Logger
+	logger         logger.Logger
+	influxdbClient influxdb2.Client
+	bookmarkRepo   repository.BookmarkRepositorier
 }
 
 func NewRegistry(
@@ -32,16 +36,19 @@ func NewRegistry(
 		envConf:  envConf,
 		appCode:  appCode,
 		commitID: commitID,
-		isCLI:    true, // CLI mode
+		isCLI:    appCode != app.AppCodeWeb, // CLI mode
 	}
 	reg.targetFunc()
 	return &reg
 }
 
 func (r *registry) InitializeApp() (app.Application, error) {
-	// CLI Application
-	app := app.NewCLIApp(r.targetHandler)
-	return app, nil
+	if r.isCLI {
+		// CLI Application
+		app := app.NewCLIApp(r.targetHandler)
+		return app, nil
+	}
+	return nil, errors.New("Web Application is not implemented yet")
 }
 
 func (r *registry) Logger() logger.Logger {
@@ -80,10 +87,7 @@ func (r *registry) newFetchHandler() handler.Handler {
 func (r *registry) newFetchUsecase() usecase.FetchUsecaser {
 	return usecase.NewFetchUsecase(
 		r.newLogger(),
-		r.envConf.InfluxdbURL,
-		r.envConf.InfluxdbToken,
-		r.envConf.InfluxdbBucket,
-		r.envConf.InfluxdbOrg,
+		r.newBookmarkRepository(),
 	)
 }
 
@@ -93,18 +97,31 @@ func (r *registry) newFetchUsecase() usecase.FetchUsecaser {
 
 func (r *registry) newLogger() logger.Logger {
 	if r.logger == nil {
-		hostname, err := os.Hostname()
-		if err != nil {
-			panic(err)
-		}
-
 		r.logger = logger.NewSlogLogger(
-			slog.LevelInfo,
-			hostname,
+			slog.LevelInfo, // default log level
 			r.appCode.String(),
 			r.commitID,
 		)
 		//r.logger.Info("Logger initialized", "logLevel", logLevel.String())
 	}
 	return r.logger
+}
+
+func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
+	if r.bookmarkRepo == nil {
+		r.bookmarkRepo = repository.NewInfluxDBBookmarkRepository(
+			r.newLogger(),
+			r.newInfluxdbClient(),
+			r.envConf.InfluxdbOrg,
+			r.envConf.InfluxdbBucket,
+		)
+	}
+	return r.bookmarkRepo
+}
+
+func (r *registry) newInfluxdbClient() influxdb2.Client {
+	if r.influxdbClient == nil {
+		r.influxdbClient = influxdb2.NewClient(r.envConf.InfluxdbURL, r.envConf.InfluxdbToken)
+	}
+	return r.influxdbClient
 }

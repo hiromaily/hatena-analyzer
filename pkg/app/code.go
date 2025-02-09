@@ -7,6 +7,7 @@ const (
 	AppCodeFetch           = AppCode("Fetch")
 	AppCodePrintBookmark   = AppCode("PrintBookmark")
 	AppCodePrintTimeSeries = AppCode("PrintTimeSeries")
+	AppCodeWeb             = AppCode("WebServer")
 )
 
 func (a AppCode) String() string {

@@ -24,5 +24,11 @@ func NewFetchCLIHandler(logger logger.Logger, usecase usecase.FetchUsecaser) *fe
 }
 
 func (f *fetchCLIHandler) Handler(ctx context.Context) error {
-	return f.usecase.Execute(ctx)
+	f.logger.Info("fetchCLIHandler Handler")
+
+	err := f.usecase.Execute(ctx)
+	if err != nil {
+		f.logger.Error("failed to fetch bookmark data", "error", err)
+	}
+	return err
 }
