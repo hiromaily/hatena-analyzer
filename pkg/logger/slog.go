@@ -13,9 +13,13 @@ type SlogLogger struct {
 func NewSlogLogger(
 	level slog.Level,
 	hostname string,
+	appCode string,
+	commitID string,
 ) *SlogLogger {
 	args := []any{
 		slog.String("hostname", hostname),
+		slog.String("appCode", appCode),
+		slog.String("commitID", commitID),
 	}
 	// logger option
 	options := &slog.HandlerOptions{Level: level}

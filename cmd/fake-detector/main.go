@@ -1,49 +1,62 @@
 package main
 
 import (
-	"context"
-	"log"
-	"log/slog"
-	"os"
-	"time"
+	"fmt"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
+	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
+
+	"github.com/hiromaily/hatena-fake-detector/pkg/args"
+	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
+	"github.com/hiromaily/hatena-fake-detector/pkg/registry"
 )
 
-type Bookmark struct {
-	Title     string `json:"title"`
-	Count     int    `json:"count"`
-	Users     map[string]User
-	Timestamp time.Time
-}
-
-type User struct {
-	Name        string `json:"name"`
-	IsCommented bool   `json:"is_commented"`
-	IsDeleted   bool   `json:"is_deleted"`
-}
+// value is passed when building application
+var CommitID string
 
 func main() {
-	// .envファイルから環境変数を読み込む
+	// Parse arguments
+	args, _, appCode := args.Parse()
+	if args.Version {
+		fmt.Println(CommitID) //nolint:revive
+		return
+	}
+
+	// Load .env file
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file")
+		panic(err)
 	}
 
-	// 環境変数から値を取得
-	influxdbURL := os.Getenv("INFLUXDB_URL")
-	influxdbToken := os.Getenv("INFLUXDB_TOKEN")
-	bucket := os.Getenv("INFLUXDB_BUCKET")
-	org := os.Getenv("INFLUXDB_ORG")
+	// Parse Environment Variables
+	var cfg envs.Config
+	if err := env.Parse(&cfg); err != nil {
+		panic(err)
+	}
 
-	slogLogger := logger.NewSlogLogger(slog.LevelDebug, "localhost")
-
-	// 初期化
-	fetchUsecaser := usecase.NewFetchUsecase(slogLogger, influxdbURL, influxdbToken, bucket, org)
-	err = fetchUsecaser.Execute(context.Background())
+	// Register for initialization of dependencies
+	reg := registry.NewRegistry(&cfg, appCode, CommitID)
+	app, err := reg.InitializeApp()
 	if err != nil {
-		slogLogger.Error("Failed to fetch bookmark data", "error", err)
+		panic(err)
 	}
+
+	// Execute application
+	err = app.Run()
+	if err != nil {
+		reg.Logger().Error("Failed to run application", "error", err)
+	}
+
+	// // Initialize usecase
+	// fetchUsecaser := usecase.NewFetchUsecase(
+	// 	slogLogger,
+	// 	cfg.InfluxdbURL,
+	// 	cfg.InfluxdbToken,
+	// 	cfg.InfluxdbBucket,
+	// 	cfg.InfluxdbOrg,
+	// )
+	// err = fetchUsecaser.Execute(context.Background())
+	// if err != nil {
+	// 	slogLogger.Error("Failed to fetch bookmark data", "error", err)
+	// }
 }

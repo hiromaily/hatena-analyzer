@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alexflint/go-arg"
-	"github.com/hiromaily/hatena-fake-detector/pkg/appcode"
+	"github.com/hiromaily/hatena-fake-detector/pkg/app"
 )
 
 type SubCommand struct{}
@@ -17,7 +17,7 @@ type Args struct {
 	PrintTimeSeriesCommand *SubCommand `arg:"subcommand:print-time-series"` // 時系列ブックマークのサマリーを表示
 }
 
-func Parse() (*Args, *arg.Parser, appcode.AppCode) {
+func Parse() (*Args, *arg.Parser, app.AppCode) {
 	var args Args
 	p := arg.MustParse(&args)
 	return &args, p, getAppCode(&args)
@@ -25,14 +25,14 @@ func Parse() (*Args, *arg.Parser, appcode.AppCode) {
 
 // 適宜コマンドの実装に合わせて追加
 // Note: 利用できないCommandはこちらには追加しない
-func getAppCode(args *Args) appcode.AppCode {
+func getAppCode(args *Args) app.AppCode {
 	switch {
 	case args.FetchCommand != nil:
-		return appcode.AppCodeFetch
+		return app.AppCodeFetch
 	case args.PrintBookmarkCommand != nil:
-		return appcode.AppCodePrintBookmark
+		return app.AppCodePrintBookmark
 	case args.PrintTimeSeriesCommand != nil:
-		return appcode.AppCodePrintTimeSeries
+		return app.AppCodePrintTimeSeries
 	}
 	panic(fmt.Errorf("subcommand is not found"))
 }

@@ -41,4 +41,4 @@ lint-fix: linecheck
 
 .PHONY: run
 run:
-	go run ./cmd/fake-detector/
+	go run ./cmd/fake-detector/ fetch

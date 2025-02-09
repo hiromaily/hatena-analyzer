@@ -1,4 +1,4 @@
-package appcode
+package app
 
 type AppCode string
 
