@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
@@ -46,20 +45,42 @@ func NewFetchUsecase(
 
 func (f *fetchUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
-	defer f.bookmarkRepo.Close()
+	defer f.bookmarkRepo.Close(ctx)
 
 	for _, url := range f.urls {
-		// load existing data
+		// load bookmark summary
+		bookmarkSummary, err := f.bookmarkRepo.ReadEntitySummary(ctx, url)
+		if err != nil {
+			f.logger.Error("failed to call bookmarkRepo.ReadEntitySummary()", "url", url, "error", err)
+			continue
+		}
+		f.logger.Debug("bookmark summary loaded",
+			"url", url,
+			"bookmarkSummary.Title", bookmarkSummary.Title,
+			"bookmarkSummary.Count", bookmarkSummary.Count,
+			"bookmarkSummary.UserCount", bookmarkSummary.UserCount,
+		)
+
+		// load bookmark
 		existingBookmark, err := f.bookmarkRepo.ReadEntity(ctx, url)
 		if err != nil {
-			if strings.Contains(err.Error(), "not found") {
-				// 初回実行時の初期化
-				existingBookmark.Users = make(map[string]entities.User)
-			} else {
-				f.logger.Error("failed to call bookmarkRepo.ReadEntity()", "url", url, "error", err)
-				continue
-			}
+			f.logger.Error("failed to call bookmarkRepo.ReadEntity()", "url", url, "error", err)
+			continue
 		}
+
+		if existingBookmark == nil {
+			f.logger.Debug("data not found on MongoDB", "url", url)
+			// initialize entities.Bookmark
+			existingBookmark = &entities.Bookmark{}
+			existingBookmark.Users = make(map[string]entities.User)
+		}
+
+		f.logger.Info("data loaded",
+			"url", url,
+			"existingBookmark.Title", existingBookmark.Title,
+			"existingBookmark.Count", existingBookmark.Count,
+			"existingBookmark.User.Length", len(existingBookmark.Users),
+		)
 
 		// 既存ユーザーをすべて`isDeleted = true`に設定
 		for userName := range existingBookmark.Users {
@@ -76,6 +97,17 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 			f.logger.Error("failed to call fetchBookmarkData()", "url", url, "error", err)
 			continue
 		}
+		f.logger.Info(
+			"data fetched",
+			"url",
+			url,
+			"newBookmark.Title",
+			newBookmark.Title,
+			"newBookmark.Count",
+			newBookmark.Count,
+			"newBookmark.User.Length",
+			len(newBookmark.Users),
+		)
 
 		// 取得したユーザーで`isDeleted = false`に設定
 		for userName, user := range newBookmark.Users {
@@ -90,7 +122,19 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		existingBookmark.Count = newBookmark.Count
 		existingBookmark.Timestamp = newBookmark.Timestamp
 
-		// データを保存
+		f.logger.Info("data will be stored",
+			"url", url,
+			"newBookmark.Title", existingBookmark.Title,
+			"newBookmark.Count", existingBookmark.Count,
+			"newBookmark.User.Length", len(existingBookmark.Users),
+		)
+
+		// save data
+		err = f.bookmarkRepo.WriteEntitySummary(ctx, url, existingBookmark)
+		if err != nil {
+			f.logger.Error("failed to call bookmarkRepo.WriteEntitySummary()", "url", url, "error", err)
+			continue
+		}
 		err = f.bookmarkRepo.WriteEntity(ctx, url, existingBookmark)
 		if err != nil {
 			f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", url, "error", err)
@@ -98,7 +142,7 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		}
 		f.logger.Info("data saved", "url", url)
 
-		// 表示
+		// Print data
 		fmt.Println("===================================================================")
 		fmt.Printf("Title: %s\n", existingBookmark.Title)
 		fmt.Printf("Count: %d\n", existingBookmark.Count)

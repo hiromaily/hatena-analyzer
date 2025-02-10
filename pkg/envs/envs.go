@@ -5,10 +5,13 @@ package envs
 // 最終的には、production,stagingの全項目が`required`属性となるはず
 
 type Config struct {
-
+	IsDebug bool `env:"IS_DEBUG"`
 	// Database
-	InfluxdbURL    string `env:"INFLUXDB_URL,required"`
-	InfluxdbToken  string `env:"INFLUXDB_TOKEN,required"`
-	InfluxdbBucket string `env:"INFLUXDB_BUCKET,required"`
-	InfluxdbOrg    string `env:"INFLUXDB_ORG,required"`
+	InfluxdbURL       string `env:"INFLUXDB_URL,required"`
+	InfluxdbToken     string `env:"INFLUXDB_TOKEN,required"`
+	InfluxdbBucket    string `env:"INFLUXDB_BUCKET,required"`
+	InfluxdbOrg       string `env:"INFLUXDB_ORG,required"`
+	MongodbURL        string `env:"MONGODB_URL,required"`
+	MongodbDB         string `env:"MONGODB_DB,required"`
+	MongodbCollection string `env:"MONGODB_COLLECTION,required"`
 }

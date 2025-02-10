@@ -150,6 +150,3 @@ type User struct {
    totalBookmarkNum int
 }
 ```
-
-URL1 user数: 100: 1, URL2 user数: 150, all unique user数: 200 
-

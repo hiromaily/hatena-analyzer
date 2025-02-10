@@ -2,22 +2,74 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"github.com/influxdata/influxdb-client-go/v2/api/write"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type BookmarkRepositorier interface {
-	Close()
+	Close(ctx context.Context)
+	ReadEntitySummary(ctx context.Context, url string) (*entities.BookmarkSummary, error)
+	WriteEntitySummary(ctx context.Context, url string, bookmark *entities.Bookmark) error
 	ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error)
 	WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error
 }
 
+type bookmarkRepository struct {
+	logger               logger.Logger
+	influxDBBookmarkRepo *influxDBBookmarkRepository
+	mongoDBBookmarkRepo  *mongoDBBookmarkRepository
+}
+
+func NewBookmarkRepository(
+	logger logger.Logger,
+	influxDBBookmarkRepo *influxDBBookmarkRepository,
+	mongoDBBookmarkRepo *mongoDBBookmarkRepository,
+) *bookmarkRepository {
+	return &bookmarkRepository{
+		logger:               logger,
+		influxDBBookmarkRepo: influxDBBookmarkRepo,
+		mongoDBBookmarkRepo:  mongoDBBookmarkRepo,
+	}
+}
+
+func (b *bookmarkRepository) Close(ctx context.Context) {
+	b.influxDBBookmarkRepo.Close(ctx)
+	b.mongoDBBookmarkRepo.Close(ctx)
+}
+
+func (b *bookmarkRepository) ReadEntitySummary(
+	ctx context.Context,
+	url string,
+) (*entities.BookmarkSummary, error) {
+	return b.influxDBBookmarkRepo.ReadEntitySummary(ctx, url)
+}
+
+func (b *bookmarkRepository) WriteEntitySummary(
+	ctx context.Context,
+	url string,
+	bookmark *entities.Bookmark,
+) error {
+	return b.influxDBBookmarkRepo.WriteEntitySummary(ctx, url, bookmark)
+}
+
+func (b *bookmarkRepository) ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error) {
+	return b.mongoDBBookmarkRepo.ReadEntity(ctx, url)
+}
+
+func (b *bookmarkRepository) WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error {
+	return b.mongoDBBookmarkRepo.WriteEntity(ctx, url, bookmark)
+}
+
 //
-// InfluxDBBookmarkRepository
+// InfluxDBBookmarkRepository Implementation
 //
 
 type influxDBBookmarkRepository struct {
@@ -40,88 +92,193 @@ func NewInfluxDBBookmarkRepository(
 	}
 }
 
-func (i *influxDBBookmarkRepository) Close() {
+func (i *influxDBBookmarkRepository) Close(_ context.Context) {
 	i.dbClient.Close()
 }
 
-func (i *influxDBBookmarkRepository) ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error) {
-	var bookmark entities.Bookmark
-	bookmark.Users = make(map[string]entities.User)
-
+func (i *influxDBBookmarkRepository) ReadEntitySummary(
+	ctx context.Context,
+	url string,
+) (*entities.BookmarkSummary, error) {
+	// query
 	queryAPI := i.dbClient.QueryAPI(i.org)
 	query := fmt.Sprintf(`
-	from(bucket: "%s")
-	  |> range(start: 0)
-	  |> filter(fn: (r) => r._measurement == "user" and r.url == "%s")
-	  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+	from(bucket: "%s") 
+	|> range(start: -1d) 
+	|> filter(fn: (r) => r._measurement == "%s")
+	|> filter(fn: (r) => r._field == "count" or r._field == "user_num")
+	|> sort(columns: ["_time"], desc: true)
+	|> limit(n: 1)
 	`, i.bucket, url)
 
 	result, err := queryAPI.Query(ctx, query)
 	if err != nil {
-		return &bookmark, err
+		// Debug: what happened when data is not found
+		i.logger.Error("failed to call influxDB queryAPI.Query()", "url", url, "error", err)
+		return nil, err
 	}
+
+	// retrieve data
+	var latestCount int
+	var latestUserNum int
+	var timeStamp time.Time
 
 	for result.Next() {
 		record := result.Record()
-		// Debug: 詳細なログ出力を追加
-		//fmt.Printf("Record: %+v\n", record)
+		timeStamp = record.Time()
 
-		// 必要なキーが存在するかをチェックし、適切な型にアサートする
-		userName, ok := record.ValueByKey("name").(string)
-		if !ok {
-			fmt.Println("name field missing or not a string")
-			continue
-		}
-
-		isDeleted, _ := record.ValueByKey("is_deleted").(bool)
-		isCommented, _ := record.ValueByKey("is_commented").(bool)
-
-		bookmark.Users[userName] = entities.User{
-			Name:        userName,
-			IsDeleted:   isDeleted,
-			IsCommented: isCommented,
+		if record.Field() == "count" {
+			countValue, ok := record.Value().(int64)
+			if !ok {
+				i.logger.Error("expecting count to be int64")
+			}
+			latestCount = int(countValue)
+		} else if record.Field() == "user_num" {
+			userNumValue, ok := record.Value().(int64)
+			if !ok {
+				i.logger.Error("expecting count to be int64")
+			}
+			latestUserNum = int(userNumValue)
+		} else {
+			i.logger.Error("unexpected field", "field", record.Field())
 		}
 	}
 	if result.Err() != nil {
-		return &bookmark, result.Err()
+		i.logger.Error("failed to retrieve data", "error", result.Err())
+		return nil, result.Err()
 	}
 
-	return &bookmark, nil
+	i.logger.Debug("latest point", "time", timeStamp, "count", latestCount, "user_num", latestUserNum)
+
+	bookmarkSummary := &entities.BookmarkSummary{
+		Count:     latestCount,
+		UserCount: latestUserNum,
+		Timestamp: timeStamp,
+	}
+
+	return bookmarkSummary, nil
 }
 
-func (i *influxDBBookmarkRepository) WriteEntity(
+func (i *influxDBBookmarkRepository) WriteEntitySummary(
 	ctx context.Context,
 	url string,
 	bookmark *entities.Bookmark,
 ) error {
-	writeAPI := i.dbClient.WriteAPIBlocking(i.org, i.bucket)
-
-	tags := map[string]string{"url": url}
-	fields := map[string]interface{}{
-		"title": bookmark.Title,
-		"count": bookmark.Count,
+	if bookmark == nil {
+		return errors.New("bookmark is nil")
 	}
 
-	// Bookmarkデータポイントの作成
-	point := write.NewPoint("bookmark", tags, fields, bookmark.Timestamp) // with timestamp
+	writeAPI := i.dbClient.WriteAPIBlocking(i.org, i.bucket)
 
-	err := writeAPI.WritePoint(ctx, point)
-	if err != nil {
+	i.logger.Debug(
+		"data will be stored",
+		"title",
+		bookmark.Title,
+		"count",
+		bookmark.Count,
+		"user_num",
+		len(bookmark.Users),
+	)
+
+	point := influxdb2.NewPointWithMeasurement(url).
+		AddTag("title", bookmark.Title).
+		AddField("count", bookmark.Count).
+		AddField("user_num", len(bookmark.Users)).
+		SetTime(time.Now())
+
+	if err := writeAPI.WritePoint(ctx, point); err != nil {
 		return err
 	}
 
-	// Userデータポイントの作成
-	for _, user := range bookmark.Users {
-		userFields := map[string]interface{}{
-			"name":         user.Name,
-			"is_commented": user.IsCommented,
-			"is_deleted":   user.IsDeleted,
+	return nil
+}
+
+//
+// MongoDBBookmarkRepository Implementation
+//
+
+type mongoDBBookmarkRepository struct {
+	logger logger.Logger
+	// Mongodb
+	mongoClient    *mongo.Client
+	mongoDB        *mongo.Database
+	collectionName string
+}
+
+func NewMongoDBBookmarkRepository(
+	logger logger.Logger,
+	mongoClient *mongo.Client,
+	dbName, collectionName string,
+) *mongoDBBookmarkRepository {
+	db := mongoClient.Database(dbName)
+
+	return &mongoDBBookmarkRepository{
+		logger:         logger,
+		mongoClient:    mongoClient,
+		mongoDB:        db,
+		collectionName: collectionName,
+	}
+}
+
+func (m *mongoDBBookmarkRepository) Close(ctx context.Context) {
+	//nolint:errcheck
+	m.mongoClient.Disconnect(ctx)
+}
+
+type URLBookmarkDocument struct {
+	URL string            `bson:"_id"`
+	Doc entities.Bookmark `bson:"doc"`
+}
+
+func (m *mongoDBBookmarkRepository) ReadEntity(
+	ctx context.Context,
+	url string,
+) (*entities.Bookmark, error) {
+	// create collection
+	collection := m.mongoDB.Collection(m.collectionName)
+
+	// find
+	var doc URLBookmarkDocument
+	err := collection.FindOne(context.TODO(), bson.M{"_id": url}).Decode(&doc)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			// not found
+			return nil, nil
 		}
-		userPoint := write.NewPoint("user", tags, userFields, bookmark.Timestamp)
-		err = writeAPI.WritePoint(context.Background(), userPoint)
-		if err != nil {
-			return err
-		}
+		return nil, err
+	}
+
+	return &doc.Doc, nil
+}
+
+func (m *mongoDBBookmarkRepository) WriteEntity(
+	ctx context.Context,
+	url string,
+	bookmark *entities.Bookmark,
+) error {
+	if bookmark == nil {
+		return errors.New("bookmark is nil")
+	}
+
+	// create collection
+	collection := m.mongoDB.Collection(m.collectionName)
+
+	// insert
+	// _, err := collection.InsertOne(ctx, URLBookmarkDocument{
+	// 	URL: url,
+	// 	Doc: *bookmark,
+	// })
+
+	// upsert
+	isUpsert := true
+	_, err := collection.UpdateOne(ctx, bson.M{"_id": url}, bson.D{
+		{Key: "$set", Value: URLBookmarkDocument{
+			URL: url,
+			Doc: *bookmark,
+		}},
+	}, &options.UpdateOptions{Upsert: &isUpsert})
+	if err != nil {
+		return err
 	}
 
 	return nil

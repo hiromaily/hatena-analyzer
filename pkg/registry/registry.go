@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -13,6 +14,8 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type registry struct {
@@ -25,6 +28,7 @@ type registry struct {
 	// common instance
 	logger          logger.Logger
 	influxdbClient  influxdb2.Client
+	mongodbClient   *mongo.Client
 	bookmarkRepo    repository.BookmarkRepositorier
 	bookmarkFetcher fetcher.BookmarkFetcher
 }
@@ -100,8 +104,12 @@ func (r *registry) newFetchUsecase() usecase.FetchUsecaser {
 
 func (r *registry) newLogger() logger.Logger {
 	if r.logger == nil {
+		logLevel := slog.LevelInfo // default log level
+		if r.envConf.IsDebug {
+			logLevel = slog.LevelDebug
+		}
 		r.logger = logger.NewSlogLogger(
-			slog.LevelInfo, // default log level
+			logLevel,
 			r.appCode.String(),
 			r.commitID,
 		)
@@ -112,11 +120,25 @@ func (r *registry) newLogger() logger.Logger {
 
 func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 	if r.bookmarkRepo == nil {
-		r.bookmarkRepo = repository.NewInfluxDBBookmarkRepository(
+		// InfluxDB implementation
+		influxdbBookmarkRepo := repository.NewInfluxDBBookmarkRepository(
 			r.newLogger(),
 			r.newInfluxdbClient(),
 			r.envConf.InfluxdbOrg,
 			r.envConf.InfluxdbBucket,
+		)
+		// MongoDB implementation
+		mongodbBookmarkRepo := repository.NewMongoDBBookmarkRepository(
+			r.newLogger(),
+			r.newMongodbClient(),
+			r.envConf.MongodbDB,
+			r.envConf.MongodbCollection,
+		)
+
+		r.bookmarkRepo = repository.NewBookmarkRepository(
+			r.newLogger(),
+			influxdbBookmarkRepo,
+			mongodbBookmarkRepo,
 		)
 	}
 	return r.bookmarkRepo
@@ -127,6 +149,18 @@ func (r *registry) newInfluxdbClient() influxdb2.Client {
 		r.influxdbClient = influxdb2.NewClient(r.envConf.InfluxdbURL, r.envConf.InfluxdbToken)
 	}
 	return r.influxdbClient
+}
+
+func (r *registry) newMongodbClient() *mongo.Client {
+	if r.mongodbClient == nil {
+		clientOptions := options.Client().ApplyURI(r.envConf.MongodbURL)
+		client, err := mongo.Connect(context.Background(), clientOptions)
+		if err != nil {
+			panic(err)
+		}
+		r.mongodbClient = client
+	}
+	return r.mongodbClient
 }
 
 func (r *registry) newBookmarkFetcher() fetcher.BookmarkFetcher {
