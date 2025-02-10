@@ -99,14 +99,10 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		}
 		f.logger.Info(
 			"data fetched",
-			"url",
-			url,
-			"newBookmark.Title",
-			newBookmark.Title,
-			"newBookmark.Count",
-			newBookmark.Count,
-			"newBookmark.User.Length",
-			len(newBookmark.Users),
+			"url", url,
+			"newBookmark.Title", newBookmark.Title,
+			"newBookmark.Count", newBookmark.Count,
+			"newBookmark.User.Length", len(newBookmark.Users),
 		)
 
 		// 取得したユーザーで`isDeleted = false`に設定
@@ -147,6 +143,7 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		fmt.Printf("Title: %s\n", existingBookmark.Title)
 		fmt.Printf("Count: %d\n", existingBookmark.Count)
 		fmt.Printf("UserCount: %d\n", len(existingBookmark.Users))
+		fmt.Printf("DeletedUserCount: %d\n", existingBookmark.CountDeletedUser())
 
 		//fmt.Printf("Users:\n")
 		// for _, user := range existingBookmark.Users {

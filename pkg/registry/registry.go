@@ -30,6 +30,7 @@ type registry struct {
 	influxdbClient  influxdb2.Client
 	mongodbClient   *mongo.Client
 	bookmarkRepo    repository.BookmarkRepositorier
+	summaryRepo     repository.SummaryRepositorier
 	bookmarkFetcher fetcher.BookmarkFetcher
 }
 
@@ -69,6 +70,8 @@ func (r *registry) targetFunc() {
 	switch {
 	case r.appCode == app.AppCodeFetch:
 		r.targetHandler = r.newFetchHandler()
+	case r.appCode == app.AppCodeViewSummary:
+		r.targetHandler = r.newViewSummaryHanlder()
 	}
 	if r.targetHandler != nil {
 		return
@@ -80,9 +83,12 @@ func (r *registry) targetFunc() {
 /// handlers
 ///
 
-// Health Handler
 func (r *registry) newFetchHandler() handler.Handler {
 	return handler.NewFetchCLIHandler(r.newLogger(), r.newFetchUsecase())
+}
+
+func (r *registry) newViewSummaryHanlder() handler.Handler {
+	return handler.NewViewSummaryCLIHandler(r.newLogger(), r.newViewSummaryUsecase())
 }
 
 ///
@@ -95,6 +101,13 @@ func (r *registry) newFetchUsecase() usecase.FetchUsecaser {
 		r.newLogger(),
 		r.newBookmarkRepository(),
 		r.newBookmarkFetcher(),
+	)
+}
+
+func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
+	return usecase.NewViewSummaryUsecase(
+		r.newLogger(),
+		r.newSummaryRepository(),
 	)
 }
 
@@ -142,6 +155,19 @@ func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 		)
 	}
 	return r.bookmarkRepo
+}
+
+func (r *registry) newSummaryRepository() repository.SummaryRepositorier {
+	if r.summaryRepo == nil {
+		// InfluxDB implementation
+		r.summaryRepo = repository.NewInfluxDBSummaryRepository(
+			r.newLogger(),
+			r.newInfluxdbClient(),
+			r.envConf.InfluxdbOrg,
+			r.envConf.InfluxdbBucket,
+		)
+	}
+	return r.summaryRepo
 }
 
 func (r *registry) newInfluxdbClient() influxdb2.Client {

@@ -39,6 +39,11 @@ lint-fix: linecheck
 # Execution
 #------------------------------------------------------------------------------
 
-.PHONY: run
-run:
+.PHONY: run-fetch
+run-fetch:
 	go run ./cmd/fake-detector/ fetch
+
+.PHONY: view-summary
+view-summary:
+	go run ./cmd/fake-detector/ view-summary
+

@@ -11,10 +11,10 @@ type SubCommand struct{}
 
 // 適宜コマンドの実装に合わせて追加
 type Args struct {
-	Version                bool
-	FetchCommand           *SubCommand `arg:"subcommand:fetch"`             // 最新のブックマークデータを取得
-	PrintBookmarkCommand   *SubCommand `arg:"subcommand:print-bookmark"`    // 最新のブックマークデータを表示
-	PrintTimeSeriesCommand *SubCommand `arg:"subcommand:print-time-series"` // 時系列ブックマークのサマリーを表示
+	Version              bool
+	FetchCommand         *SubCommand `arg:"subcommand:fetch"`          // 最新のブックマークデータを取得
+	ViewSummaryCommand   *SubCommand `arg:"subcommand:view-summary"`   // 時系列ブックマークのサマリーを表示
+	PrintBookmarkCommand *SubCommand `arg:"subcommand:print-bookmark"` // 最新のブックマークデータを表示
 }
 
 func Parse() (*Args, *arg.Parser, app.AppCode) {
@@ -29,10 +29,10 @@ func getAppCode(args *Args) app.AppCode {
 	switch {
 	case args.FetchCommand != nil:
 		return app.AppCodeFetch
+	case args.ViewSummaryCommand != nil:
+		return app.AppCodeViewSummary
 	case args.PrintBookmarkCommand != nil:
 		return app.AppCodePrintBookmark
-	case args.PrintTimeSeriesCommand != nil:
-		return app.AppCodePrintTimeSeries
 	}
 	panic(fmt.Errorf("subcommand is not found"))
 }

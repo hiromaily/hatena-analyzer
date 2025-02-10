@@ -106,7 +106,7 @@ func (i *influxDBBookmarkRepository) ReadEntitySummary(
 	from(bucket: "%s") 
 	|> range(start: -1d) 
 	|> filter(fn: (r) => r._measurement == "%s")
-	|> filter(fn: (r) => r._field == "count" or r._field == "user_num")
+	|> filter(fn: (r) => r._field == "count" or r._field == "user_num" or r._field == "deleted_user_num")
 	|> sort(columns: ["_time"], desc: true)
 	|> limit(n: 1)
 	`, i.bucket, url)
@@ -119,27 +119,37 @@ func (i *influxDBBookmarkRepository) ReadEntitySummary(
 	}
 
 	// retrieve data
-	var latestCount int
-	var latestUserNum int
-	var timeStamp time.Time
+	var (
+		latestCount          int
+		latestUserNum        int
+		latestDeletedUserNum int
+		timeStamp            time.Time
+	)
 
 	for result.Next() {
 		record := result.Record()
 		timeStamp = record.Time()
 
-		if record.Field() == "count" {
+		switch record.Field() {
+		case "count":
 			countValue, ok := record.Value().(int64)
 			if !ok {
 				i.logger.Error("expecting count to be int64")
 			}
 			latestCount = int(countValue)
-		} else if record.Field() == "user_num" {
+		case "user_num":
 			userNumValue, ok := record.Value().(int64)
 			if !ok {
-				i.logger.Error("expecting count to be int64")
+				i.logger.Error("expecting user_num to be int64")
 			}
 			latestUserNum = int(userNumValue)
-		} else {
+		case "deleted_user_num":
+			userNumValue, ok := record.Value().(int64)
+			if !ok {
+				i.logger.Error("expecting deleted user_num to be int64")
+			}
+			latestDeletedUserNum = int(userNumValue)
+		default:
 			i.logger.Error("unexpected field", "field", record.Field())
 		}
 	}
@@ -148,12 +158,18 @@ func (i *influxDBBookmarkRepository) ReadEntitySummary(
 		return nil, result.Err()
 	}
 
-	i.logger.Debug("latest point", "time", timeStamp, "count", latestCount, "user_num", latestUserNum)
+	i.logger.Debug("latest point",
+		"time", timeStamp,
+		"count", latestCount,
+		"user_num", latestUserNum,
+		"deleted_user_num", latestDeletedUserNum,
+	)
 
 	bookmarkSummary := &entities.BookmarkSummary{
-		Count:     latestCount,
-		UserCount: latestUserNum,
-		Timestamp: timeStamp,
+		Count:            latestCount,
+		UserCount:        latestUserNum,
+		DeletedUserCount: latestDeletedUserNum,
+		Timestamp:        timeStamp,
 	}
 
 	return bookmarkSummary, nil
@@ -168,22 +184,24 @@ func (i *influxDBBookmarkRepository) WriteEntitySummary(
 		return errors.New("bookmark is nil")
 	}
 
+	userNum := len(bookmark.Users)
+	deletedUserNum := bookmark.CountDeletedUser()
+
 	writeAPI := i.dbClient.WriteAPIBlocking(i.org, i.bucket)
 
 	i.logger.Debug(
 		"data will be stored",
-		"title",
-		bookmark.Title,
-		"count",
-		bookmark.Count,
-		"user_num",
-		len(bookmark.Users),
+		"title", bookmark.Title,
+		"count", bookmark.Count,
+		"user_num", userNum,
+		"deleted_user_num", deletedUserNum,
 	)
 
 	point := influxdb2.NewPointWithMeasurement(url).
 		AddTag("title", bookmark.Title).
 		AddField("count", bookmark.Count).
-		AddField("user_num", len(bookmark.Users)).
+		AddField("user_num", userNum).
+		AddField("deleted_user_num", deletedUserNum).
 		SetTime(time.Now())
 
 	if err := writeAPI.WritePoint(ctx, point); err != nil {
