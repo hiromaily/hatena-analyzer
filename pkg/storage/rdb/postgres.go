@@ -10,26 +10,26 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
 )
 
-type RDBClient interface {
-	Close(ctx context.Context) error
-	Begin(ctx context.Context) error
-	Commit(ctx context.Context) error
-	Rollback(ctx context.Context) error
-	ExecuteSQLFile(ctx context.Context, filepath string) error
-}
+// type RDBClient interface {
+// 	Close(ctx context.Context) error
+// 	Begin(ctx context.Context) error
+// 	Commit(ctx context.Context) error
+// 	Rollback(ctx context.Context) error
+// 	ExecuteSQLFile(ctx context.Context, filepath string) error
+// }
 
 //
 // Sqlc with PostgreSQL
 //
 
-type sqlcPostgresClient struct {
+type SqlcPostgresClient struct {
 	db        *pgx.Conn
 	tx        pgx.Tx
 	Queries   *sqlcgen.Queries
 	QueriesTx *sqlcgen.Queries
 }
 
-func NewSqlcPostgresClient(ctx context.Context, dataSourceName string) (*sqlcPostgresClient, error) {
+func NewSqlcPostgresClient(ctx context.Context, dataSourceName string) (*SqlcPostgresClient, error) {
 	// validation
 	if dataSourceName == "" {
 		return nil, errors.New("dataSourceName is empty")
@@ -42,7 +42,7 @@ func NewSqlcPostgresClient(ctx context.Context, dataSourceName string) (*sqlcPos
 
 	queries := sqlcgen.New(db)
 
-	return &sqlcPostgresClient{
+	return &SqlcPostgresClient{
 		db:        db,
 		tx:        nil,
 		Queries:   queries,
@@ -51,14 +51,14 @@ func NewSqlcPostgresClient(ctx context.Context, dataSourceName string) (*sqlcPos
 }
 
 // Close db connection
-func (s *sqlcPostgresClient) Close(ctx context.Context) error {
+func (s *SqlcPostgresClient) Close(ctx context.Context) error {
 	if s.db != nil {
 		return s.db.Close(ctx)
 	}
 	return nil
 }
 
-func (s *sqlcPostgresClient) Begin(ctx context.Context) error {
+func (s *SqlcPostgresClient) Begin(ctx context.Context) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (s *sqlcPostgresClient) Begin(ctx context.Context) error {
 	return nil
 }
 
-func (s *sqlcPostgresClient) Commit(ctx context.Context) error {
+func (s *SqlcPostgresClient) Commit(ctx context.Context) error {
 	err := s.tx.Commit(ctx)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (s *sqlcPostgresClient) Commit(ctx context.Context) error {
 	return nil
 }
 
-func (s *sqlcPostgresClient) Rollback(ctx context.Context) error {
+func (s *SqlcPostgresClient) Rollback(ctx context.Context) error {
 	err := s.tx.Rollback(ctx)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func (s *sqlcPostgresClient) Rollback(ctx context.Context) error {
 }
 
 // Execute raw sql
-func (s *sqlcPostgresClient) ExecuteSQLFile(ctx context.Context, filepath string) error {
+func (s *SqlcPostgresClient) ExecuteSQLFile(ctx context.Context, filepath string) error {
 	sqlBytes, err := os.ReadFile(filepath)
 	if err != nil {
 		return err

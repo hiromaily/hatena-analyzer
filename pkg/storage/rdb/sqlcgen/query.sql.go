@@ -47,7 +47,7 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]User,
 	return items, nil
 }
 
-const insertURL = `-- name: InsertURL :execlastid
+const insertURL = `-- name: InsertURL :exec
 INSERT INTO
   URLs (url_address)
 VALUES
@@ -57,7 +57,13 @@ RETURNING
   url_id
 `
 
-const insertUser = `-- name: InsertUser :execlastid
+// @desc: insert url if not existed and return url_id
+func (q *Queries) InsertURL(ctx context.Context, urlAddress string) error {
+	_, err := q.db.Exec(ctx, insertURL, urlAddress)
+	return err
+}
+
+const insertUser = `-- name: InsertUser :exec
 INSERT INTO
   Users (user_name)
 VALUES
@@ -66,3 +72,9 @@ ON CONFLICT (user_name) DO NOTHING
 RETURNING
   user_id
 `
+
+// @desc: insert user if not existed and return user_id
+func (q *Queries) InsertUser(ctx context.Context, userName string) error {
+	_, err := q.db.Exec(ctx, insertUser, userName)
+	return err
+}

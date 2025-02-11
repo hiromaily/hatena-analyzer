@@ -9,7 +9,7 @@ FROM
 WHERE
   url.url_address = $1;
 
--- name: InsertURL :execlastid
+-- name: InsertURL :exec
 -- @desc: insert url if not existed and return url_id
 INSERT INTO
   URLs (url_address)
@@ -19,7 +19,7 @@ ON CONFLICT (url_address) DO NOTHING
 RETURNING
   url_id;
 
--- name: InsertUser :execlastid
+-- name: InsertUser :exec
 -- @desc: insert user if not existed and return user_id
 INSERT INTO
   Users (user_name)

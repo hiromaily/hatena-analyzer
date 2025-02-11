@@ -36,7 +36,7 @@ type registry struct {
 
 	// common instance
 	logger          logger.Logger
-	postgresClient  rdb.RDBClient
+	postgresClient  *rdb.SqlcPostgresClient
 	influxdbClient  influxdb2.Client
 	mongodbClient   *mongo.Client
 	bookmarkFetcher fetcher.BookmarkFetcher
@@ -137,7 +137,11 @@ func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
 
 func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 	if r.bookmarkRepo == nil {
-		// TODO: Posgres implementation
+		// PosgreSQL implementation
+		postgresBookmarkRepo := repository.NewRDBBookmarkRepository(
+			r.newLogger(),
+			r.newPostgresClient(),
+		)
 
 		// InfluxDB implementation
 		influxdbBookmarkRepo := repository.NewInfluxDBBookmarkRepository(
@@ -156,6 +160,7 @@ func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 
 		r.bookmarkRepo = repository.NewBookmarkRepository(
 			r.newLogger(),
+			postgresBookmarkRepo,
 			influxdbBookmarkRepo,
 			mongodbBookmarkRepo,
 		)
@@ -196,7 +201,7 @@ func (r *registry) newLogger() logger.Logger {
 	return r.logger
 }
 
-func (r *registry) newPostgresClient() rdb.RDBClient {
+func (r *registry) newPostgresClient() *rdb.SqlcPostgresClient {
 	if r.postgresClient == nil {
 		pgClient, err := rdb.NewSqlcPostgresClient(context.Background(), r.envConf.PostgresURL)
 		if err != nil {

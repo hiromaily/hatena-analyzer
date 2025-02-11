@@ -22,6 +22,8 @@ type BookmarkRepositorier interface {
 	WriteEntitySummary(ctx context.Context, url string, bookmark *entities.Bookmark) error
 	ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error)
 	WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error
+	InsertURL(ctx context.Context, url string) error
+	InsertUser(ctx context.Context, userName string) error
 }
 
 //
@@ -30,23 +32,27 @@ type BookmarkRepositorier interface {
 
 type bookmarkRepository struct {
 	logger               logger.Logger
+	rdbBookmarkRepo      *rdbBookmarkRepository
 	influxDBBookmarkRepo *influxDBBookmarkRepository
 	mongoDBBookmarkRepo  *mongoDBBookmarkRepository
 }
 
 func NewBookmarkRepository(
 	logger logger.Logger,
+	rdbBookmarkRepo *rdbBookmarkRepository,
 	influxDBBookmarkRepo *influxDBBookmarkRepository,
 	mongoDBBookmarkRepo *mongoDBBookmarkRepository,
 ) *bookmarkRepository {
 	return &bookmarkRepository{
 		logger:               logger,
+		rdbBookmarkRepo:      rdbBookmarkRepo,
 		influxDBBookmarkRepo: influxDBBookmarkRepo,
 		mongoDBBookmarkRepo:  mongoDBBookmarkRepo,
 	}
 }
 
 func (b *bookmarkRepository) Close(ctx context.Context) {
+	b.rdbBookmarkRepo.Close(ctx)
 	b.influxDBBookmarkRepo.Close(ctx)
 	b.mongoDBBookmarkRepo.Close(ctx)
 }
@@ -74,23 +80,43 @@ func (b *bookmarkRepository) WriteEntity(ctx context.Context, url string, bookma
 	return b.mongoDBBookmarkRepo.WriteEntity(ctx, url, bookmark)
 }
 
+func (b *bookmarkRepository) InsertURL(ctx context.Context, url string) error {
+	return b.rdbBookmarkRepo.InsertURL(ctx, url)
+}
+
+func (b *bookmarkRepository) InsertUser(ctx context.Context, userName string) error {
+	return b.rdbBookmarkRepo.InsertUser(ctx, userName)
+}
+
 //
 // PostgresBookmarkRepository Implementation
 //
 
 type rdbBookmarkRepository struct {
 	logger    logger.Logger
-	rdbClient rdb.RDBClient
+	rdbClient *rdb.SqlcPostgresClient
 }
 
 func NewRDBBookmarkRepository(
 	logger logger.Logger,
-	rdbClient rdb.RDBClient,
+	rdbClient *rdb.SqlcPostgresClient,
 ) *rdbBookmarkRepository {
 	return &rdbBookmarkRepository{
 		logger:    logger,
 		rdbClient: rdbClient,
 	}
+}
+
+func (r *rdbBookmarkRepository) Close(ctx context.Context) error {
+	return r.rdbClient.Close(ctx)
+}
+
+func (r *rdbBookmarkRepository) InsertURL(ctx context.Context, url string) error {
+	return r.rdbClient.Queries.InsertURL(ctx, url)
+}
+
+func (r *rdbBookmarkRepository) InsertUser(ctx context.Context, userName string) error {
+	return r.rdbClient.Queries.InsertUser(ctx, userName)
 }
 
 //
@@ -115,9 +141,6 @@ func NewInfluxDBBookmarkRepository(
 		org:      org,
 		bucket:   bucket,
 	}
-}
-
-func (i *influxDBBookmarkRepository) InsertURL(_ context.Context) {
 }
 
 func (i *influxDBBookmarkRepository) Close(_ context.Context) {
