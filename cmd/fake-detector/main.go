@@ -15,17 +15,17 @@ import (
 var CommitID string
 
 func main() {
-	// Parse arguments
-	args, _, appCode := args.Parse()
-	if args.Version {
-		fmt.Println(CommitID) //nolint:revive
-		return
-	}
-
 	// Load .env file
 	err := godotenv.Load()
 	if err != nil {
 		panic(err)
+	}
+
+	// Parse arguments
+	args, _, appCode := args.Parse()
+	if args.Version {
+		fmt.Println(CommitID)
+		return
 	}
 
 	// Parse Environment Variables
@@ -35,7 +35,7 @@ func main() {
 	}
 
 	// Register for initialization of dependencies
-	reg := registry.NewRegistry(&cfg, appCode, CommitID)
+	reg := registry.NewRegistry(&cfg, appCode, CommitID, args.URLs)
 	app, err := reg.InitializeApp()
 	if err != nil {
 		panic(err)

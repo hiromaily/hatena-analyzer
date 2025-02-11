@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -23,21 +24,18 @@ type summaryUsecase struct {
 func NewViewSummaryUsecase(
 	logger logger.Logger,
 	summaryRepo repository.SummaryRepositorier,
-) *summaryUsecase {
-
-	// target URL list
-	urls := []string{
-		"https://note.com/simplearchitect/n/nadc0bcdd5b3d",
-		"https://note.com/simplearchitect/n/n871f29ffbfac",
-		"https://note.com/simplearchitect/n/n86a95bc19b4c",
-		"https://note.com/simplearchitect/n/nfd147540e3db",
+	urls []string,
+) (*summaryUsecase, error) {
+	// validation
+	if len(urls) == 0 {
+		return nil, errors.New("urls is empty")
 	}
 
 	return &summaryUsecase{
 		logger:      logger,
 		summaryRepo: summaryRepo,
 		urls:        urls,
-	}
+	}, nil
 }
 
 func (s *summaryUsecase) Execute(ctx context.Context) error {
@@ -55,11 +53,12 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 
 		for _, summary := range summaries {
 			fmt.Printf(
-				" %s: count: %d, user_count: %d, deleted_user_count: %d\n",
+				" %s: count: %d, user_count: %d, deleted_user_count: %d, delete rate: %.1f\n",
 				times.ToJPTime(summary.Timestamp).Format(time.RFC3339),
 				summary.Count,
 				summary.UserCount,
 				summary.DeletedUserCount,
+				float64(summary.Count-summary.UserCount)/float64(summary.Count)*100,
 			)
 		}
 	}

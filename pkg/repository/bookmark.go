@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
+	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 )
 
 type BookmarkRepositorier interface {
@@ -67,6 +68,12 @@ func (b *bookmarkRepository) ReadEntity(ctx context.Context, url string) (*entit
 func (b *bookmarkRepository) WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error {
 	return b.mongoDBBookmarkRepo.WriteEntity(ctx, url, bookmark)
 }
+
+//
+// PostgresBookmarkRepository Implementation
+//
+
+// TODO: implement PostgresBookmarkRepository
 
 //
 // InfluxDBBookmarkRepository Implementation
@@ -204,11 +211,7 @@ func (i *influxDBBookmarkRepository) WriteEntitySummary(
 		AddField("deleted_user_num", deletedUserNum).
 		SetTime(time.Now())
 
-	if err := writeAPI.WritePoint(ctx, point); err != nil {
-		return err
-	}
-
-	return nil
+	return writeAPI.WritePoint(ctx, point)
 }
 
 //
@@ -249,7 +252,7 @@ type URLBookmarkDocument struct {
 }
 
 func (m *mongoDBBookmarkRepository) ReadEntity(
-	ctx context.Context,
+	_ context.Context,
 	url string,
 ) (*entities.Bookmark, error) {
 	// create collection

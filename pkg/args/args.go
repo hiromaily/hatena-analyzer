@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/alexflint/go-arg"
+
 	"github.com/hiromaily/hatena-fake-detector/pkg/app"
 )
 
@@ -11,7 +12,8 @@ type SubCommand struct{}
 
 // 適宜コマンドの実装に合わせて追加
 type Args struct {
-	Version              bool
+	Version              bool        // global option
+	URLs                 []string    `arg:"--urls,env:URLS"`           // global option
 	FetchCommand         *SubCommand `arg:"subcommand:fetch"`          // 最新のブックマークデータを取得
 	ViewSummaryCommand   *SubCommand `arg:"subcommand:view-summary"`   // 時系列ブックマークのサマリーを表示
 	PrintBookmarkCommand *SubCommand `arg:"subcommand:print-bookmark"` // 最新のブックマークデータを表示

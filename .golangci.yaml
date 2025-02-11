@@ -1,0 +1,95 @@
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - copyloopvar
+    - dogsled
+    - errcheck
+    - gocheckcompilerdirectives
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    #- mnd # 全てのマジックナンバーに対して警告が出るため無効化
+    - goprintffuncname
+    #- gosec # 内部的に発生し得ないtype assertionの警告が出るため無効化
+    - gosimple
+    - govet
+    - intrange
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - revive
+    - staticcheck
+    - stylecheck
+    - testifylint
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+linters-settings:
+  gofmt:
+    rewrite-rules:
+      - pattern: 'interface{}'
+        replacement: 'any'
+  goimports:
+    local-prefixes: github.com/hiromaily/hatena-fake-detector
+  lll:
+    line-length: 120
+  misspell:
+    locale: US
+    ignore-words:
+      - "importas" # linter name
+  revive:
+    enable-all-rules: true
+    rules:
+      - name: add-constant
+        disabled: true
+      - name: argument-limit
+        disabled: true
+      - name: cognitive-complexity
+        disabled: true
+      - name: comment-spacings
+        disabled: true
+      - name: cyclomatic
+        disabled: true
+      - name: exported
+        disabled: true
+      - name: flag-parameter
+        disabled: true
+      - name: function-length
+        disabled: true
+      - name: function-result-limit
+        disabled: true
+      - name: import-alias-naming
+        disabled: true
+      - name: import-shadowing
+        disabled: true
+      - name: line-length-limit
+        disabled: true
+      - name: max-public-structs
+        disabled: true
+      - name: unused-receiver
+        disabled: true
+      - name: unexported-return
+        disabled: true
+      - name: unhandled-error
+        disabled: true
+
+issues:
+  exclude-rules:
+    - path: (.+)_test\.go
+      linters:
+        - mnd
+        - lll
+
+run:
+  timeout: 5m
+  build-tags:
+    - integration

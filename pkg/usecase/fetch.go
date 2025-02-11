@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
@@ -25,14 +26,11 @@ func NewFetchUsecase(
 	logger logger.Logger,
 	bookmarkRepo repository.BookmarkRepositorier,
 	bookmarkFetcher fetcher.BookmarkFetcher,
-) *fetchUsecase {
-
-	// target URL list
-	urls := []string{
-		"https://note.com/simplearchitect/n/nadc0bcdd5b3d",
-		"https://note.com/simplearchitect/n/n871f29ffbfac",
-		"https://note.com/simplearchitect/n/n86a95bc19b4c",
-		"https://note.com/simplearchitect/n/nfd147540e3db",
+	urls []string,
+) (*fetchUsecase, error) {
+	// validation
+	if len(urls) == 0 {
+		return nil, errors.New("urls is empty")
 	}
 
 	return &fetchUsecase{
@@ -40,7 +38,7 @@ func NewFetchUsecase(
 		bookmarkRepo:    bookmarkRepo,
 		bookmarkFetcher: bookmarkFetcher,
 		urls:            urls,
-	}
+	}, nil
 }
 
 func (f *fetchUsecase) Execute(ctx context.Context) error {
@@ -92,7 +90,7 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		}
 
 		// 新しいデータを取得
-		newBookmark, err := f.bookmarkFetcher.Entity(url)
+		newBookmark, err := f.bookmarkFetcher.Entity(ctx, url)
 		if err != nil {
 			f.logger.Error("failed to call fetchBookmarkData()", "url", url, "error", err)
 			continue
@@ -145,7 +143,7 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		fmt.Printf("UserCount: %d\n", len(existingBookmark.Users))
 		fmt.Printf("DeletedUserCount: %d\n", existingBookmark.CountDeletedUser())
 
-		//fmt.Printf("Users:\n")
+		// fmt.Printf("Users:\n")
 		// for _, user := range existingBookmark.Users {
 		// 	fmt.Printf(" - %s\n", user.Name)
 		// }

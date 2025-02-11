@@ -6,6 +6,11 @@ import (
 	"fmt"
 	"log/slog"
 
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/jackc/pgx/v5"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 	"github.com/hiromaily/hatena-fake-detector/pkg/app"
 	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
 	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
@@ -13,24 +18,26 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type registry struct {
-	envConf       *envs.Config
-	appCode       app.AppCode
-	commitID      string
+	envConf  *envs.Config
+	appCode  app.AppCode
+	commitID string
+	urls     []string
+
 	isCLI         bool
 	targetHandler handler.Handler
 
+	// repositories
+	bookmarkRepo repository.BookmarkRepositorier
+	summaryRepo  repository.SummaryRepositorier
+
 	// common instance
 	logger          logger.Logger
+	postgresClient  *pgx.Conn
 	influxdbClient  influxdb2.Client
 	mongodbClient   *mongo.Client
-	bookmarkRepo    repository.BookmarkRepositorier
-	summaryRepo     repository.SummaryRepositorier
 	bookmarkFetcher fetcher.BookmarkFetcher
 }
 
@@ -38,11 +45,13 @@ func NewRegistry(
 	envConf *envs.Config,
 	appCode app.AppCode,
 	commitID string,
+	urls []string,
 ) Registry {
 	reg := registry{
 		envConf:  envConf,
 		appCode:  appCode,
 		commitID: commitID,
+		urls:     urls,
 		isCLI:    appCode != app.AppCodeWeb, // CLI mode
 	}
 	reg.targetFunc()
@@ -55,7 +64,7 @@ func (r *registry) InitializeApp() (app.Application, error) {
 		app := app.NewCLIApp(r.targetHandler)
 		return app, nil
 	}
-	return nil, errors.New("Web Application is not implemented yet")
+	return nil, errors.New("web application is not implemented yet")
 }
 
 func (r *registry) Logger() logger.Logger {
@@ -97,42 +106,38 @@ func (r *registry) newViewSummaryHanlder() handler.Handler {
 
 // must be called only once
 func (r *registry) newFetchUsecase() usecase.FetchUsecaser {
-	return usecase.NewFetchUsecase(
+	usecase, err := usecase.NewFetchUsecase(
 		r.newLogger(),
 		r.newBookmarkRepository(),
 		r.newBookmarkFetcher(),
+		r.urls,
 	)
+	if err != nil {
+		panic(err)
+	}
+	return usecase
 }
 
 func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
-	return usecase.NewViewSummaryUsecase(
+	usecase, err := usecase.NewViewSummaryUsecase(
 		r.newLogger(),
 		r.newSummaryRepository(),
+		r.urls,
 	)
-}
-
-///
-/// Common instances
-///
-
-func (r *registry) newLogger() logger.Logger {
-	if r.logger == nil {
-		logLevel := slog.LevelInfo // default log level
-		if r.envConf.IsDebug {
-			logLevel = slog.LevelDebug
-		}
-		r.logger = logger.NewSlogLogger(
-			logLevel,
-			r.appCode.String(),
-			r.commitID,
-		)
-		//r.logger.Info("Logger initialized", "logLevel", logLevel.String())
+	if err != nil {
+		panic(err)
 	}
-	return r.logger
+	return usecase
 }
+
+///
+/// Repositories
+///
 
 func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 	if r.bookmarkRepo == nil {
+		// TODO: Posgres implementation
+
 		// InfluxDB implementation
 		influxdbBookmarkRepo := repository.NewInfluxDBBookmarkRepository(
 			r.newLogger(),
@@ -168,6 +173,37 @@ func (r *registry) newSummaryRepository() repository.SummaryRepositorier {
 		)
 	}
 	return r.summaryRepo
+}
+
+///
+/// Common instances
+///
+
+func (r *registry) newLogger() logger.Logger {
+	if r.logger == nil {
+		logLevel := slog.LevelInfo // default log level
+		if r.envConf.IsDebug {
+			logLevel = slog.LevelDebug
+		}
+		r.logger = logger.NewSlogLogger(
+			logLevel,
+			r.appCode.String(),
+			r.commitID,
+		)
+		// r.logger.Info("Logger initialized", "logLevel", logLevel.String())
+	}
+	return r.logger
+}
+
+func (r *registry) newPostgresClient() *pgx.Conn {
+	if r.postgresClient == nil {
+		conn, err := pgx.Connect(context.Background(), r.envConf.PostgresURL)
+		if err != nil {
+			panic(err)
+		}
+		r.postgresClient = conn
+	}
+	return r.postgresClient
 }
 
 func (r *registry) newInfluxdbClient() influxdb2.Client {

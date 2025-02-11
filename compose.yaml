@@ -1,30 +1,19 @@
 # Refer to: https://docs.influxdata.com/influxdb/v2/install/use-docker-compose/
 services:
-  influxdb2:
-    image: influxdb:2.7.11
-    ports:
-      - 8086:8086
+  db:
+    image: postgres:17.2
+    container_name: postgres-db
+    restart: unless-stopped
     environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      # DOCKER_INFLUXDB_INIT_USERNAME_FILE: /run/secrets/influxdb2-admin-username
-      # DOCKER_INFLUXDB_INIT_PASSWORD_FILE: /run/secrets/influxdb2-admin-password
-      # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN_FILE: /run/secrets/influxdb2-admin-token
-      DOCKER_INFLUXDB_INIT_USERNAME: admin
-      DOCKER_INFLUXDB_INIT_PASSWORD: password
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my_super_secret_token
-      DOCKER_INFLUXDB_INIT_ORG: bookmark
-      DOCKER_INFLUXDB_INIT_BUCKET: home
-    # secrets:
-    #   - influxdb2-admin-username
-    #   - influxdb2-admin-password
-    #   - influxdb2-admin-token
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=bookmark
+    ports:
+      - "5432:5432"
     volumes:
-      - type: volume
-        source: influxdb2-data
-        target: /var/lib/influxdb2
-      - type: volume
-        source: influxdb2-config
-        target: /etc/influxdb2
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
   mongo:
     image: mongo:8.0.4
     restart: always
@@ -36,15 +25,29 @@ services:
     volumes:
       - mongo-data:/data/db
       - mongo-config:/data/configdb
-# secrets:
-#   influxdb2-admin-username:
-#     file: ~/.env.influxdb2-admin-username
-#   influxdb2-admin-password:
-#     file: ~/.env.influxdb2-admin-password
-#   influxdb2-admin-token:
-#     file: ~/.env.influxdb2-admin-token
+
+  influxdb2:
+    image: influxdb:2.7.11
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: password
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my_super_secret_token
+      DOCKER_INFLUXDB_INIT_ORG: bookmark
+      DOCKER_INFLUXDB_INIT_BUCKET: home
+    ports:
+      - 8086:8086
+    volumes:
+      - type: volume
+        source: influxdb2-data
+        target: /var/lib/influxdb2
+      - type: volume
+        source: influxdb2-config
+        target: /etc/influxdb2
+
 volumes:
-  influxdb2-data:
-  influxdb2-config:
+  pgdata:
   mongo-data:
   mongo-config:
+  influxdb2-data:
+  influxdb2-config:

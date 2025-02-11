@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -21,25 +22,31 @@ func NewBookmarkFetcher(logger logger.Logger) *bookmarkFetcher {
 	}
 }
 
-func (b *bookmarkFetcher) Entity(url string) (*entities.Bookmark, error) {
-	apiUrl := b.entityURL + url
+// FIXME: integrate bookmark entity
+type Bookmark struct {
+	User      string `json:"user"`
+	Comment   string `json:"comment"`
+	Timestamp string `json:"timestamp"`
+}
 
-	resp, err := http.Get(apiUrl)
+type Data struct {
+	Title     string     `json:"title"`
+	Count     int        `json:"count"`
+	Bookmarks []Bookmark `json:"bookmarks"`
+}
+
+func (b *bookmarkFetcher) Entity(ctx context.Context, url string) (*entities.Bookmark, error) {
+	apiURL := b.entityURL + url
+
+	// warning: net/http.Get must not be called (noctx)
+	// resp, err := http.Get(apiURL)
+	resp, err := b.request(ctx, apiURL)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	var data struct {
-		Title     string `json:"title"`
-		Count     int    `json:"count"`
-		Bookmarks []struct {
-			User      string `json:"user"`
-			Comment   string `json:"comment"`
-			Timestamp string `json:"timestamp"`
-		} `json:"bookmarks"`
-	}
-
+	var data Data
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return nil, err
 	}
@@ -59,4 +66,24 @@ func (b *bookmarkFetcher) Entity(url string) (*entities.Bookmark, error) {
 		Users:     users,
 		Timestamp: time.Now(),
 	}, nil
+}
+
+func (b *bookmarkFetcher) request(ctx context.Context, apiURL string) (*http.Response, error) {
+	// set 10 seconds timeout
+	// use new context due to multiple calls
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }

@@ -6,9 +6,10 @@ import (
 	"sort"
 	"time"
 
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 )
 
 type SummaryRepositorier interface {

@@ -1,9 +1,11 @@
 package fetcher
 
 import (
+	"context"
+
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 )
 
 type BookmarkFetcher interface {
-	Entity(url string) (*entities.Bookmark, error)
+	Entity(ctx context.Context, url string) (*entities.Bookmark, error)
 }
