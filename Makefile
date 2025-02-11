@@ -5,6 +5,7 @@ GOVULNCHECK_BIN=go run golang.org/x/vuln/cmd/govulncheck
 GOMAJOR_BIN=go run github.com/icholy/gomajor
 GOLINE_BIN=go run github.com/segmentio/golines
 GOTESTSUM_BIN=go run gotest.tools/gotestsum
+SQLC_BIN=go run github.com/sqlc-dev/sqlc/cmd/sqlc
 
 #------------------------------------------------------------------------------
 # Tools for maintenance
@@ -34,6 +35,22 @@ lint:
 .PHONY: lint-fix
 lint-fix: linecheck
 	$(LINT_BIN) run --fix
+
+#------------------------------------------------------------------------------
+# Code generation
+#------------------------------------------------------------------------------
+.PHONY: copy-query
+copy-query:
+	cp ./docker/postgres/schema.sql ./sqlc/schemas/
+
+.PHONY: gen-db-code
+gen-db-code: clean-sqlc-gen-code
+	$(SQLC_BIN) -f sqlc/sqlc.yml vet
+	$(SQLC_BIN) -f sqlc/sqlc.yml generate
+
+.PHONY: clean-gen-code
+clean-sqlc-gen-code:
+	rm -rf ./pkg/storage/rdb/sqlcgen
 
 #------------------------------------------------------------------------------
 # Execution

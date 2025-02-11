@@ -1,0 +1,14 @@
+version: "2"
+servers:
+  - engine: postgresql
+    uri: "postgresql://postgres:password@localhost:5432/bookmark?sslmode=disable"
+sql:
+  - engine: "postgresql"
+    queries: "./queries/*.sql"
+    #schema: "./schemas/*/**.sql"
+    schema: "./schemas/*.sql"
+    gen:
+      go:
+        package: "sqlcgen"
+        out: "../pkg/storage/rdb/sqlcgen"
+        sql_package: "pgx/v5"
