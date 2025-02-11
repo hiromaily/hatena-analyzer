@@ -78,3 +78,18 @@ func (q *Queries) InsertUser(ctx context.Context, userName string) error {
 	_, err := q.db.Exec(ctx, insertUser, userName)
 	return err
 }
+
+const upsertUser = `-- name: UpsertUser :exec
+INSERT INTO Users (user_name) 
+VALUES ($1)
+ON CONFLICT (user_name) 
+DO UPDATE SET 
+    is_deleted = FALSE,
+    updated_at = EXCLUDED.updated_at
+`
+
+// @desc: insert user if not existed, update user with is_deleted=false if existed
+func (q *Queries) UpsertUser(ctx context.Context, userName string) error {
+	_, err := q.db.Exec(ctx, upsertUser, userName)
+	return err
+}

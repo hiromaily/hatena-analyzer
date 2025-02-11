@@ -46,41 +46,13 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 	defer f.bookmarkRepo.Close(ctx)
 
 	for _, url := range f.urls {
-		// load bookmark summary
-		bookmarkSummary, err := f.bookmarkRepo.ReadEntitySummary(ctx, url)
+		// load
+		existingBookmark, err := f.load(ctx, url)
 		if err != nil {
-			f.logger.Error("failed to call bookmarkRepo.ReadEntitySummary()", "url", url, "error", err)
-			continue
-		}
-		f.logger.Debug("bookmark summary loaded",
-			"url", url,
-			"bookmarkSummary.Title", bookmarkSummary.Title,
-			"bookmarkSummary.Count", bookmarkSummary.Count,
-			"bookmarkSummary.UserCount", bookmarkSummary.UserCount,
-		)
-
-		// load bookmark
-		existingBookmark, err := f.bookmarkRepo.ReadEntity(ctx, url)
-		if err != nil {
-			f.logger.Error("failed to call bookmarkRepo.ReadEntity()", "url", url, "error", err)
 			continue
 		}
 
-		if existingBookmark == nil {
-			f.logger.Debug("data not found on MongoDB", "url", url)
-			// initialize entities.Bookmark
-			existingBookmark = &entities.Bookmark{}
-			existingBookmark.Users = make(map[string]entities.User)
-		}
-
-		f.logger.Info("data loaded",
-			"url", url,
-			"existingBookmark.Title", existingBookmark.Title,
-			"existingBookmark.Count", existingBookmark.Count,
-			"existingBookmark.User.Length", len(existingBookmark.Users),
-		)
-
-		// 既存ユーザーをすべて`isDeleted = true`に設定
+		// set isDeleted = `true` on existingBookmark.Users
 		for userName := range existingBookmark.Users {
 			existingBookmark.Users[userName] = entities.User{
 				Name:        userName,
@@ -89,21 +61,17 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 			}
 		}
 
-		// 新しいデータを取得
-		newBookmark, err := f.bookmarkFetcher.Entity(ctx, url)
+		// retrieve latest data from web
+		newBookmark, err := f.fetch(ctx, url)
 		if err != nil {
-			f.logger.Error("failed to call fetchBookmarkData()", "url", url, "error", err)
 			continue
 		}
-		f.logger.Info(
-			"data fetched",
-			"url", url,
-			"newBookmark.Title", newBookmark.Title,
-			"newBookmark.Count", newBookmark.Count,
-			"newBookmark.User.Length", len(newBookmark.Users),
-		)
 
-		// 取得したユーザーで`isDeleted = false`に設定
+		// update
+		existingBookmark.Title = newBookmark.Title
+		existingBookmark.Count = newBookmark.Count
+		existingBookmark.Timestamp = newBookmark.Timestamp
+		// overwrite `isDeleted` with `false` if user is still exist
 		for userName, user := range newBookmark.Users {
 			existingBookmark.Users[userName] = entities.User{
 				Name:        userName,
@@ -111,12 +79,7 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 				IsCommented: user.IsCommented,
 			}
 		}
-
-		existingBookmark.Title = newBookmark.Title
-		existingBookmark.Count = newBookmark.Count
-		existingBookmark.Timestamp = newBookmark.Timestamp
-
-		f.logger.Info("data will be stored",
+		f.logger.Info("bookmark entity will be stored",
 			"url", url,
 			"newBookmark.Title", existingBookmark.Title,
 			"newBookmark.Count", existingBookmark.Count,
@@ -124,31 +87,109 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 		)
 
 		// save data
-		err = f.bookmarkRepo.WriteEntitySummary(ctx, url, existingBookmark)
+		err = f.save(ctx, url, existingBookmark)
 		if err != nil {
-			f.logger.Error("failed to call bookmarkRepo.WriteEntitySummary()", "url", url, "error", err)
 			continue
 		}
-		err = f.bookmarkRepo.WriteEntity(ctx, url, existingBookmark)
-		if err != nil {
-			f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", url, "error", err)
-			continue
-		}
-		f.logger.Info("data saved", "url", url)
 
 		// Print data
-		fmt.Println("===================================================================")
-		fmt.Printf("Title: %s\n", existingBookmark.Title)
-		fmt.Printf("Count: %d\n", existingBookmark.Count)
-		fmt.Printf("UserCount: %d\n", len(existingBookmark.Users))
-		fmt.Printf("DeletedUserCount: %d\n", existingBookmark.CountDeletedUser())
-
-		// fmt.Printf("Users:\n")
-		// for _, user := range existingBookmark.Users {
-		// 	fmt.Printf(" - %s\n", user.Name)
-		// }
-		fmt.Println()
+		f.print(existingBookmark)
 	}
 
 	return nil
+}
+
+func (f *fetchUsecase) load(ctx context.Context, url string) (*entities.Bookmark, error) {
+	// load bookmark summary
+	bookmarkSummary, err := f.bookmarkRepo.ReadEntitySummary(ctx, url)
+	if err != nil {
+		f.logger.Error("failed to call bookmarkRepo.ReadEntitySummary()", "url", url, "error", err)
+		return nil, err
+	}
+	f.logger.Debug("bookmark summary loaded",
+		"url", url,
+		"bookmarkSummary.Title", bookmarkSummary.Title,
+		"bookmarkSummary.Count", bookmarkSummary.Count,
+		"bookmarkSummary.UserCount", bookmarkSummary.UserCount,
+	)
+
+	// load bookmark content by URL
+	existingBookmark, err := f.bookmarkRepo.ReadEntity(ctx, url)
+	if err != nil {
+		f.logger.Error("failed to call bookmarkRepo.ReadEntity()", "url", url, "error", err)
+		return nil, err
+	}
+
+	if existingBookmark == nil {
+		f.logger.Debug("entity not found on DB", "url", url)
+		// initialize entities.Bookmark
+		existingBookmark = &entities.Bookmark{}
+		existingBookmark.Users = make(map[string]entities.User)
+	}
+
+	f.logger.Info("bookmark entity loaded",
+		"url", url,
+		"existingBookmark.Title", existingBookmark.Title,
+		"existingBookmark.Count", existingBookmark.Count,
+		"existingBookmark.User.Length", len(existingBookmark.Users),
+	)
+	return existingBookmark, nil
+}
+
+func (f *fetchUsecase) fetch(ctx context.Context, url string) (*entities.Bookmark, error) {
+	newBookmark, err := f.bookmarkFetcher.Entity(ctx, url)
+	if err != nil {
+		f.logger.Error("failed to call fetchBookmarkData()", "url", url, "error", err)
+		return nil, err
+	}
+	f.logger.Info(
+		"data fetched",
+		"url", url,
+		"newBookmark.Title", newBookmark.Title,
+		"newBookmark.Count", newBookmark.Count,
+		"newBookmark.User.Length", len(newBookmark.Users),
+	)
+
+	return newBookmark, nil
+}
+
+func (f *fetchUsecase) save(ctx context.Context, url string, bookmark *entities.Bookmark) error {
+	err := f.bookmarkRepo.WriteEntitySummary(ctx, url, bookmark)
+	if err != nil {
+		f.logger.Error("failed to call bookmarkRepo.WriteEntitySummary()", "url", url, "error", err)
+		return err
+	}
+	err = f.bookmarkRepo.WriteEntity(ctx, url, bookmark)
+	if err != nil {
+		f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", url, "error", err)
+		return err
+	}
+	err = f.bookmarkRepo.InsertURL(ctx, url)
+	if err != nil {
+		f.logger.Error("failed to call bookmarkRepo.InsertURL()", "url", url, "error", err)
+		return err
+	}
+	for _, users := range bookmark.Users {
+		err = f.bookmarkRepo.UpsertUser(ctx, users.Name)
+		if err != nil {
+			f.logger.Warn("failed to call bookmarkRepo.UpsertUser()", "userName", users.Name, "error", err)
+		}
+	}
+
+	f.logger.Info("bookmark data saved", "url", url)
+	return nil
+}
+
+func (f *fetchUsecase) print(bookmark *entities.Bookmark) {
+	fmt.Println("===================================================================")
+	fmt.Printf("Title: %s\n", bookmark.Title)
+	fmt.Printf("Count: %d\n", bookmark.Count)
+	fmt.Printf("UserCount: %d\n", len(bookmark.Users))
+	fmt.Printf("DeletedUserCount: %d\n", bookmark.CountDeletedUser())
+
+	// fmt.Printf("Users:\n")
+	// for _, user := range existingBookmark.Users {
+	// 	fmt.Printf(" - %s\n", user.Name)
+	// }
+	fmt.Println()
 }

@@ -35,7 +35,7 @@ func NewSqlcPostgresClient(ctx context.Context, dataSourceName string) (*SqlcPos
 		return nil, errors.New("dataSourceName is empty")
 	}
 
-	db, err := pgx.Connect(ctx, "user=pqgotest dbname=pqgotest sslmode=verify-full")
+	db, err := pgx.Connect(ctx, dataSourceName)
 	if err != nil {
 		return nil, err
 	}

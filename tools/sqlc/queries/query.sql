@@ -28,3 +28,12 @@ VALUES
 ON CONFLICT (user_name) DO NOTHING
 RETURNING
   user_id;
+
+-- name: UpsertUser :exec
+-- @desc: insert user if not existed, update user with is_deleted=false if existed
+INSERT INTO Users (user_name) 
+VALUES ($1)
+ON CONFLICT (user_name) 
+DO UPDATE SET 
+    is_deleted = FALSE,
+    updated_at = EXCLUDED.updated_at;

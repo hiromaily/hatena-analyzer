@@ -24,6 +24,7 @@ type BookmarkRepositorier interface {
 	WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error
 	InsertURL(ctx context.Context, url string) error
 	InsertUser(ctx context.Context, userName string) error
+	UpsertUser(ctx context.Context, userName string) error
 }
 
 //
@@ -88,6 +89,10 @@ func (b *bookmarkRepository) InsertUser(ctx context.Context, userName string) er
 	return b.rdbBookmarkRepo.InsertUser(ctx, userName)
 }
 
+func (b *bookmarkRepository) UpsertUser(ctx context.Context, userName string) error {
+	return b.rdbBookmarkRepo.UpsertUser(ctx, userName)
+}
+
 //
 // PostgresBookmarkRepository Implementation
 //
@@ -117,6 +122,10 @@ func (r *rdbBookmarkRepository) InsertURL(ctx context.Context, url string) error
 
 func (r *rdbBookmarkRepository) InsertUser(ctx context.Context, userName string) error {
 	return r.rdbClient.Queries.InsertUser(ctx, userName)
+}
+
+func (r *rdbBookmarkRepository) UpsertUser(ctx context.Context, userName string) error {
+	return r.rdbClient.Queries.UpsertUser(ctx, userName)
 }
 
 //

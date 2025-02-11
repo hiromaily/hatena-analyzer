@@ -9,7 +9,7 @@ CREATE TABLE Users (
 
 CREATE TABLE URLs (
     url_id SERIAL PRIMARY KEY,
-    url_address VARCHAR(256) NOT NULL,
+    url_address VARCHAR(256) NOT NULL UNIQUE,
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -37,6 +37,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TRIGGER before_update_users
+BEFORE UPDATE ON Users
+FOR EACH ROW
+EXECUTE FUNCTION set_timestamp_users();
+
 -- URLs table trigger function
 CREATE OR REPLACE FUNCTION set_timestamp_urls()
 RETURNS TRIGGER AS $$
@@ -47,6 +52,11 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_update_urls
+BEFORE UPDATE ON URLs
+FOR EACH ROW
+EXECUTE FUNCTION set_timestamp_urls();
 
 -- UserURLs table trigger function
 CREATE OR REPLACE FUNCTION set_timestamp_userurls()
@@ -59,19 +69,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Users table trigger
-CREATE TRIGGER before_update_users
-BEFORE UPDATE ON Users
-FOR EACH ROW
-EXECUTE FUNCTION set_timestamp_users();
-
--- URLs table trigger
-CREATE TRIGGER before_update_urls
-BEFORE UPDATE ON URLs
-FOR EACH ROW
-EXECUTE FUNCTION set_timestamp_urls();
-
--- UserURLs table trigger
 CREATE TRIGGER before_update_userurls
 BEFORE UPDATE ON UserURLs
 FOR EACH ROW
