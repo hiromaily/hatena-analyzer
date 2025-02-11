@@ -14,19 +14,16 @@ make build-sqlfluff-image
 
 ## How to use
 
-`sql-linter`ディレクトリ内で作業する場合、ディレクトリ内に適当なsqlファイルを配置する。ここでは`sample.sql`とする。
+In case of working on `sql-linter` directory, prepare sql file in this directory.
 
 ```sh
-
 # formatter
-docker run --rm -v $(pwd):/workspace sqlfluff-local:latest fix /workspace/sample.sql
+docker run --rm -v $(pwd):/workspace sqlfluff-local:latest fix /workspace/example.sql
 
 # linter
-docker run --rm -v $(pwd):/workspace sqlfluff-local:latest lint /workspace/sample.sql
+docker run --rm -v $(pwd):/workspace sqlfluff-local:latest lint /workspace/example.sql
 ```
-
-参考: [Makefile](./Makefile)、[batch/Makefile](../batch/Makefile): lint-queryターゲット
 
 ## References
 
-- [Officialドキュメント](https://docs.sqlfluff.com/en/stable/index.html)
+- [Official Docs](https://docs.sqlfluff.com/en/stable/index.html)

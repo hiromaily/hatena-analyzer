@@ -35,10 +35,6 @@ A氏のサイトのURLは事前にプログラムで登録しておく。もし�
 
 ### MongoDB
 
-
-
-
-
 ## [はてなブックマーク REST API](https://developer.hatena.ne.jp/ja/documents/bookmark/apis/rest/)
 
 ### [はてなブックマーク エントリー情報取得API](https://developer.hatena.ne.jp/ja/documents/bookmark/apis/getinfo)
