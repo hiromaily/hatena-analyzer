@@ -10,11 +10,14 @@ import (
 )
 
 const getUsersByURL = `-- name: GetUsersByURL :many
-SELECT u.user_id, u.user_name, u.is_deleted
-FROM Users u
-INNER JOIN UserURLs uu ON u.user_id = uu.user_id
-INNER JOIN URLs url ON uu.url_id = url.url_id
-WHERE url.url_address = $1
+SELECT
+  u.user_id, u.user_name, u.is_deleted, u.created_at, u.updated_at
+FROM
+  Users u
+  INNER JOIN UserURLs uu ON u.user_id = uu.user_id
+  INNER JOIN URLs url ON uu.url_id = url.url_id
+WHERE
+  url.url_address = $1
 `
 
 // @desc: get target users by url
@@ -27,7 +30,13 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]User,
 	var items []User
 	for rows.Next() {
 		var i User
-		if err := rows.Scan(&i.UserID, &i.UserName, &i.IsDeleted); err != nil {
+		if err := rows.Scan(
+			&i.UserID,
+			&i.UserName,
+			&i.IsDeleted,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -37,3 +46,23 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]User,
 	}
 	return items, nil
 }
+
+const insertURL = `-- name: InsertURL :execlastid
+INSERT INTO
+  URLs (url_address)
+VALUES
+  ($1)
+ON CONFLICT (url_address) DO NOTHING
+RETURNING
+  url_id
+`
+
+const insertUser = `-- name: InsertUser :execlastid
+INSERT INTO
+  Users (user_name)
+VALUES
+  ($1)
+ON CONFLICT (user_name) DO NOTHING
+RETURNING
+  user_id
+`

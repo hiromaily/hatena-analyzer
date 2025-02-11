@@ -13,6 +13,7 @@ import (
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
+	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 )
 
 type BookmarkRepositorier interface {
@@ -22,6 +23,10 @@ type BookmarkRepositorier interface {
 	ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error)
 	WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error
 }
+
+//
+// bookmarkRepository Implementation
+//
 
 type bookmarkRepository struct {
 	logger               logger.Logger
@@ -73,7 +78,20 @@ func (b *bookmarkRepository) WriteEntity(ctx context.Context, url string, bookma
 // PostgresBookmarkRepository Implementation
 //
 
-// TODO: implement PostgresBookmarkRepository
+type rdbBookmarkRepository struct {
+	logger    logger.Logger
+	rdbClient rdb.RDBClient
+}
+
+func NewRDBBookmarkRepository(
+	logger logger.Logger,
+	rdbClient rdb.RDBClient,
+) *rdbBookmarkRepository {
+	return &rdbBookmarkRepository{
+		logger:    logger,
+		rdbClient: rdbClient,
+	}
+}
 
 //
 // InfluxDBBookmarkRepository Implementation
@@ -97,6 +115,9 @@ func NewInfluxDBBookmarkRepository(
 		org:      org,
 		bucket:   bucket,
 	}
+}
+
+func (i *influxDBBookmarkRepository) InsertURL(_ context.Context) {
 }
 
 func (i *influxDBBookmarkRepository) Close(_ context.Context) {

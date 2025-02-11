@@ -12,12 +12,16 @@ type Url struct {
 	UrlID      int32
 	UrlAddress string
 	IsDeleted  pgtype.Bool
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
 }
 
 type User struct {
 	UserID    int32
 	UserName  string
 	IsDeleted pgtype.Bool
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }
 
 type Userurl struct {
@@ -25,4 +29,6 @@ type Userurl struct {
 	UserID    int32
 	UrlID     int32
 	IsDeleted pgtype.Bool
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }
