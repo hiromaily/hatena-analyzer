@@ -78,8 +78,8 @@ func (r *registry) targetFunc() {
 	}
 
 	switch {
-	case r.appCode == app.AppCodeFetch:
-		r.targetHandler = r.newFetchHandler()
+	case r.appCode == app.AppCodeFetchBookmark:
+		r.targetHandler = r.newFetchBookmarkHandler()
 	case r.appCode == app.AppCodeViewSummary:
 		r.targetHandler = r.newViewSummaryHanlder()
 	}
@@ -93,8 +93,8 @@ func (r *registry) targetFunc() {
 /// handlers
 ///
 
-func (r *registry) newFetchHandler() handler.Handler {
-	return handler.NewFetchCLIHandler(r.newLogger(), r.newFetchUsecase())
+func (r *registry) newFetchBookmarkHandler() handler.Handler {
+	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase())
 }
 
 func (r *registry) newViewSummaryHanlder() handler.Handler {
@@ -106,8 +106,8 @@ func (r *registry) newViewSummaryHanlder() handler.Handler {
 ///
 
 // must be called only once
-func (r *registry) newFetchUsecase() usecase.FetchUsecaser {
-	usecase, err := usecase.NewFetchUsecase(
+func (r *registry) newFetchBookmarkUsecase() usecase.FetchBookmarkUsecaser {
+	usecase, err := usecase.NewFetchBookmarkUsecase(
 		r.newLogger(),
 		r.newBookmarkRepository(),
 		r.newBookmarkFetcher(),

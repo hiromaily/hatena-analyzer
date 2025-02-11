@@ -2,11 +2,11 @@ package app
 
 type AppCode string
 
-// 適宜コマンドの実装に合わせて追加
+// AppCode
 const (
-	AppCodeFetch         = AppCode("Fetch")
+	AppCodeFetchBookmark = AppCode("FetchBookmark")
 	AppCodeViewSummary   = AppCode("ViewSummary")
-	AppCodePrintBookmark = AppCode("PrintBookmark")
+	AppCodeFetchUserInfo = AppCode("FetchUserInfo")
 	AppCodeWeb           = AppCode("WebServer")
 )
 

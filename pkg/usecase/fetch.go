@@ -11,29 +11,29 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 )
 
-type FetchUsecaser interface {
+type FetchBookmarkUsecaser interface {
 	Execute(ctx context.Context) error
 }
 
-type fetchUsecase struct {
+type fetchBookmarkUsecase struct {
 	logger          logger.Logger
 	bookmarkRepo    repository.BookmarkRepositorier
 	bookmarkFetcher fetcher.BookmarkFetcher
 	urls            []string
 }
 
-func NewFetchUsecase(
+func NewFetchBookmarkUsecase(
 	logger logger.Logger,
 	bookmarkRepo repository.BookmarkRepositorier,
 	bookmarkFetcher fetcher.BookmarkFetcher,
 	urls []string,
-) (*fetchUsecase, error) {
+) (*fetchBookmarkUsecase, error) {
 	// validation
 	if len(urls) == 0 {
 		return nil, errors.New("urls is empty")
 	}
 
-	return &fetchUsecase{
+	return &fetchBookmarkUsecase{
 		logger:          logger,
 		bookmarkRepo:    bookmarkRepo,
 		bookmarkFetcher: bookmarkFetcher,
@@ -41,7 +41,7 @@ func NewFetchUsecase(
 	}, nil
 }
 
-func (f *fetchUsecase) Execute(ctx context.Context) error {
+func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
 	defer f.bookmarkRepo.Close(ctx)
 
@@ -99,7 +99,7 @@ func (f *fetchUsecase) Execute(ctx context.Context) error {
 	return nil
 }
 
-func (f *fetchUsecase) load(ctx context.Context, url string) (*entities.Bookmark, error) {
+func (f *fetchBookmarkUsecase) load(ctx context.Context, url string) (*entities.Bookmark, error) {
 	// load bookmark summary
 	bookmarkSummary, err := f.bookmarkRepo.ReadEntitySummary(ctx, url)
 	if err != nil {
@@ -136,7 +136,7 @@ func (f *fetchUsecase) load(ctx context.Context, url string) (*entities.Bookmark
 	return existingBookmark, nil
 }
 
-func (f *fetchUsecase) fetch(ctx context.Context, url string) (*entities.Bookmark, error) {
+func (f *fetchBookmarkUsecase) fetch(ctx context.Context, url string) (*entities.Bookmark, error) {
 	newBookmark, err := f.bookmarkFetcher.Entity(ctx, url)
 	if err != nil {
 		f.logger.Error("failed to call fetchBookmarkData()", "url", url, "error", err)
@@ -153,7 +153,7 @@ func (f *fetchUsecase) fetch(ctx context.Context, url string) (*entities.Bookmar
 	return newBookmark, nil
 }
 
-func (f *fetchUsecase) save(ctx context.Context, url string, bookmark *entities.Bookmark) error {
+func (f *fetchBookmarkUsecase) save(ctx context.Context, url string, bookmark *entities.Bookmark) error {
 	// InfluxDB
 	err := f.bookmarkRepo.WriteEntitySummary(ctx, url, bookmark)
 	if err != nil {
@@ -202,7 +202,7 @@ func (f *fetchUsecase) save(ctx context.Context, url string, bookmark *entities.
 	return nil
 }
 
-func (f *fetchUsecase) print(bookmark *entities.Bookmark) {
+func (f *fetchBookmarkUsecase) print(bookmark *entities.Bookmark) {
 	fmt.Println("===================================================================")
 	fmt.Printf("Title: %s\n", bookmark.Title)
 	fmt.Printf("Count: %d\n", bookmark.Count)
