@@ -9,6 +9,23 @@ import (
 	"context"
 )
 
+const getUrlID = `-- name: GetUrlID :one
+SELECT
+  u.url_id
+FROM
+  URLs u
+WHERE
+  u.url_address = $1
+`
+
+// @desc: get target url_id by url address
+func (q *Queries) GetUrlID(ctx context.Context, urlAddress string) (int32, error) {
+	row := q.db.QueryRow(ctx, getUrlID, urlAddress)
+	var url_id int32
+	err := row.Scan(&url_id)
+	return url_id, err
+}
+
 const getUsersByURL = `-- name: GetUsersByURL :many
 SELECT
   u.user_id, u.user_name, u.is_deleted, u.created_at, u.updated_at
@@ -47,7 +64,7 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]User,
 	return items, nil
 }
 
-const insertURL = `-- name: InsertURL :exec
+const insertURL = `-- name: InsertURL :one
 INSERT INTO
   URLs (url_address)
 VALUES
@@ -58,12 +75,14 @@ RETURNING
 `
 
 // @desc: insert url if not existed and return url_id
-func (q *Queries) InsertURL(ctx context.Context, urlAddress string) error {
-	_, err := q.db.Exec(ctx, insertURL, urlAddress)
-	return err
+func (q *Queries) InsertURL(ctx context.Context, urlAddress string) (int32, error) {
+	row := q.db.QueryRow(ctx, insertURL, urlAddress)
+	var url_id int32
+	err := row.Scan(&url_id)
+	return url_id, err
 }
 
-const insertUser = `-- name: InsertUser :exec
+const insertUser = `-- name: InsertUser :one
 INSERT INTO
   Users (user_name)
 VALUES
@@ -73,23 +92,48 @@ RETURNING
   user_id
 `
 
-// @desc: insert user if not existed and return user_id
-func (q *Queries) InsertUser(ctx context.Context, userName string) error {
-	_, err := q.db.Exec(ctx, insertUser, userName)
-	return err
+// @desc: Deprecated!!! insert user if not existed and return user_id
+func (q *Queries) InsertUser(ctx context.Context, userName string) (int32, error) {
+	row := q.db.QueryRow(ctx, insertUser, userName)
+	var user_id int32
+	err := row.Scan(&user_id)
+	return user_id, err
 }
 
-const upsertUser = `-- name: UpsertUser :exec
+const upsertUser = `-- name: UpsertUser :one
 INSERT INTO Users (user_name) 
 VALUES ($1)
 ON CONFLICT (user_name) 
 DO UPDATE SET 
     is_deleted = FALSE,
-    updated_at = EXCLUDED.updated_at
+    updated_at = EXCLUDED.updated_at 
+RETURNING user_id
 `
 
 // @desc: insert user if not existed, update user with is_deleted=false if existed
-func (q *Queries) UpsertUser(ctx context.Context, userName string) error {
-	_, err := q.db.Exec(ctx, upsertUser, userName)
+func (q *Queries) UpsertUser(ctx context.Context, userName string) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertUser, userName)
+	var user_id int32
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
+const upsertUserURLs = `-- name: UpsertUserURLs :exec
+INSERT INTO UserURLs (user_id, url_id) 
+VALUES ($1, $2)
+ON CONFLICT (user_id, url_id) 
+DO UPDATE SET 
+    is_deleted = FALSE,
+    updated_at = EXCLUDED.updated_at
+`
+
+type UpsertUserURLsParams struct {
+	UserID int32
+	UrlID  int32
+}
+
+// @desc: insert UserURLs if not existed, update UserURLs with is_deleted=false if existed
+func (q *Queries) UpsertUserURLs(ctx context.Context, arg UpsertUserURLsParams) error {
+	_, err := q.db.Exec(ctx, upsertUserURLs, arg.UserID, arg.UrlID)
 	return err
 }

@@ -23,7 +23,8 @@ CREATE TABLE UserURLs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES Users (user_id),
-    FOREIGN KEY (url_id) REFERENCES URLs (url_id)
+    FOREIGN KEY (url_id) REFERENCES URLs (url_id),
+    UNIQUE (user_id, url_id)
 );
 
 -- Users table trigger function

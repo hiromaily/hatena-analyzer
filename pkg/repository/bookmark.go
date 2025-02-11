@@ -14,17 +14,23 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
+	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
 )
 
 type BookmarkRepositorier interface {
 	Close(ctx context.Context)
+	// PostgreSQL
+	// GetURLID(ctx context.Context, url string) (int32, error)
+	InsertURL(ctx context.Context, url string) (int32, error)
+	// InsertUser(ctx context.Context, userName string) error
+	UpsertUser(ctx context.Context, userName string) (int32, error)
+	UpsertUserURLs(ctx context.Context, userID, urlID int32) error
+	// InfluxDB
 	ReadEntitySummary(ctx context.Context, url string) (*entities.BookmarkSummary, error)
 	WriteEntitySummary(ctx context.Context, url string, bookmark *entities.Bookmark) error
+	// MongoDB
 	ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error)
 	WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error
-	InsertURL(ctx context.Context, url string) error
-	InsertUser(ctx context.Context, userName string) error
-	UpsertUser(ctx context.Context, userName string) error
 }
 
 //
@@ -58,6 +64,30 @@ func (b *bookmarkRepository) Close(ctx context.Context) {
 	b.mongoDBBookmarkRepo.Close(ctx)
 }
 
+// PostgreSQL
+
+// func (b *bookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
+// 	return b.rdbBookmarkRepo.GetURLID(ctx, url)
+// }
+
+func (b *bookmarkRepository) InsertURL(ctx context.Context, url string) (int32, error) {
+	return b.rdbBookmarkRepo.InsertURL(ctx, url)
+}
+
+// func (b *bookmarkRepository) InsertUser(ctx context.Context, userName string) error {
+// 	return b.rdbBookmarkRepo.InsertUser(ctx, userName)
+// }
+
+func (b *bookmarkRepository) UpsertUser(ctx context.Context, userName string) (int32, error) {
+	return b.rdbBookmarkRepo.UpsertUser(ctx, userName)
+}
+
+func (b *bookmarkRepository) UpsertUserURLs(ctx context.Context, userID, urlID int32) error {
+	return b.rdbBookmarkRepo.UpsertUserURLs(ctx, userID, urlID)
+}
+
+// InfluxDB
+
 func (b *bookmarkRepository) ReadEntitySummary(
 	ctx context.Context,
 	url string,
@@ -73,24 +103,14 @@ func (b *bookmarkRepository) WriteEntitySummary(
 	return b.influxDBBookmarkRepo.WriteEntitySummary(ctx, url, bookmark)
 }
 
+// MongoDB
+
 func (b *bookmarkRepository) ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error) {
 	return b.mongoDBBookmarkRepo.ReadEntity(ctx, url)
 }
 
 func (b *bookmarkRepository) WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error {
 	return b.mongoDBBookmarkRepo.WriteEntity(ctx, url, bookmark)
-}
-
-func (b *bookmarkRepository) InsertURL(ctx context.Context, url string) error {
-	return b.rdbBookmarkRepo.InsertURL(ctx, url)
-}
-
-func (b *bookmarkRepository) InsertUser(ctx context.Context, userName string) error {
-	return b.rdbBookmarkRepo.InsertUser(ctx, userName)
-}
-
-func (b *bookmarkRepository) UpsertUser(ctx context.Context, userName string) error {
-	return b.rdbBookmarkRepo.UpsertUser(ctx, userName)
 }
 
 //
@@ -116,16 +136,28 @@ func (r *rdbBookmarkRepository) Close(ctx context.Context) error {
 	return r.rdbClient.Close(ctx)
 }
 
-func (r *rdbBookmarkRepository) InsertURL(ctx context.Context, url string) error {
+// func (r *rdbBookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
+// 	return r.rdbClient.Queries.GetUrlID(ctx, url)
+// }
+
+func (r *rdbBookmarkRepository) InsertURL(ctx context.Context, url string) (int32, error) {
 	return r.rdbClient.Queries.InsertURL(ctx, url)
 }
 
-func (r *rdbBookmarkRepository) InsertUser(ctx context.Context, userName string) error {
-	return r.rdbClient.Queries.InsertUser(ctx, userName)
+// func (r *rdbBookmarkRepository) InsertUser(ctx context.Context, userName string) error {
+// 	return r.rdbClient.Queries.InsertUser(ctx, userName)
+// }
+
+func (r *rdbBookmarkRepository) UpsertUser(ctx context.Context, userName string) (int32, error) {
+	return r.rdbClient.Queries.UpsertUser(ctx, userName)
 }
 
-func (r *rdbBookmarkRepository) UpsertUser(ctx context.Context, userName string) error {
-	return r.rdbClient.Queries.UpsertUser(ctx, userName)
+func (r *rdbBookmarkRepository) UpsertUserURLs(ctx context.Context, userID, urlID int32) error {
+	param := sqlcgen.UpsertUserURLsParams{
+		UserID: userID,
+		UrlID:  urlID,
+	}
+	return r.rdbClient.Queries.UpsertUserURLs(ctx, param)
 }
 
 //

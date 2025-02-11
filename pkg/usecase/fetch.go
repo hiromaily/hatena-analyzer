@@ -154,25 +154,47 @@ func (f *fetchUsecase) fetch(ctx context.Context, url string) (*entities.Bookmar
 }
 
 func (f *fetchUsecase) save(ctx context.Context, url string, bookmark *entities.Bookmark) error {
+	// InfluxDB
 	err := f.bookmarkRepo.WriteEntitySummary(ctx, url, bookmark)
 	if err != nil {
 		f.logger.Error("failed to call bookmarkRepo.WriteEntitySummary()", "url", url, "error", err)
 		return err
 	}
+
+	// MongoDB
 	err = f.bookmarkRepo.WriteEntity(ctx, url, bookmark)
 	if err != nil {
 		f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", url, "error", err)
 		return err
 	}
-	err = f.bookmarkRepo.InsertURL(ctx, url)
+
+	// PostgreSQL
+	// urlID, err := f.bookmarkRepo.GetURLID(ctx, url)
+	// if err != nil {
+	// 	f.logger.Error("failed to call bookmarkRepo.GetURLID()", "url", url, "error", err)
+	// 	return err
+	// }
+
+	urlID, err := f.bookmarkRepo.InsertURL(ctx, url)
 	if err != nil {
 		f.logger.Error("failed to call bookmarkRepo.InsertURL()", "url", url, "error", err)
 		return err
 	}
 	for _, users := range bookmark.Users {
-		err = f.bookmarkRepo.UpsertUser(ctx, users.Name)
+		// Users
+		userID, err := f.bookmarkRepo.UpsertUser(ctx, users.Name)
 		if err != nil {
 			f.logger.Warn("failed to call bookmarkRepo.UpsertUser()", "userName", users.Name, "error", err)
+		}
+		// UserURLs
+		err = f.bookmarkRepo.UpsertUserURLs(ctx, userID, urlID)
+		if err != nil {
+			f.logger.Warn(
+				"failed to call bookmarkRepo.UpsertUserURLs()",
+				"userID", userID,
+				"urlID", urlID,
+				"error", err,
+			)
 		}
 	}
 
