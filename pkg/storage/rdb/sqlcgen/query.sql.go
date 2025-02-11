@@ -9,6 +9,72 @@ import (
 	"context"
 )
 
+const countGetBookmarkedUsersURLCounts = `-- name: CountGetBookmarkedUsersURLCounts :one
+SELECT
+  COUNT(*)
+FROM
+  (
+    SELECT
+      user_id,
+      COUNT(user_id) AS url_count
+    FROM
+      UserURLs
+    WHERE
+      url_id IN (1, 2, 3, 4)
+    GROUP BY
+      user_id
+    HAVING
+      COUNT(user_id) = 4
+  ) AS subquery
+`
+
+// @desc: Count target that each user's bookmarked urls
+func (q *Queries) CountGetBookmarkedUsersURLCounts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countGetBookmarkedUsersURLCounts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getBookmarkedUsersURLCounts = `-- name: GetBookmarkedUsersURLCounts :many
+SELECT 
+    user_id, COUNT(user_id) AS url_count
+FROM 
+    UserURLs
+WHERE
+    url_id in (1,2,3,4)
+GROUP BY 
+    user_id
+ORDER BY 
+    url_count DESC
+`
+
+type GetBookmarkedUsersURLCountsRow struct {
+	UserID   int32
+	UrlCount int64
+}
+
+// @desc: Count each user's bookmarked urls
+func (q *Queries) GetBookmarkedUsersURLCounts(ctx context.Context) ([]GetBookmarkedUsersURLCountsRow, error) {
+	rows, err := q.db.Query(ctx, getBookmarkedUsersURLCounts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetBookmarkedUsersURLCountsRow
+	for rows.Next() {
+		var i GetBookmarkedUsersURLCountsRow
+		if err := rows.Scan(&i.UserID, &i.UrlCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUrlID = `-- name: GetUrlID :one
 SELECT
   u.url_id

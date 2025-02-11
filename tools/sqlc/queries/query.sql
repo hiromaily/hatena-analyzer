@@ -57,30 +57,34 @@ DO UPDATE SET
     is_deleted = FALSE,
     updated_at = EXCLUDED.updated_at;
 
--- name: BookmarkedUsersCounts :many
+-- name: GetBookmarkedUsersURLCounts :many
 -- @desc: Count each user's bookmarked urls
-WITH given_urls AS (
-    SELECT UNNEST(ARRAY[1, 2, 3, 4]) AS url_id
-)
 SELECT 
-    U.user_id,
-    U.user_name,
-    COUNT(UR.url_id) as url_count
+    user_id, COUNT(user_id) AS url_count
 FROM 
-    Users U
-JOIN 
-    UserURLs UR ON U.user_id = UR.user_id
-JOIN 
-    URLs ON UR.url_id = URLs.url_id
-JOIN 
-    given_urls GU ON UR.url_id = GU.url_id
-WHERE 
-    U.is_deleted = FALSE
-AND 
-    URLs.is_deleted = FALSE
-AND 
-    UR.is_deleted = FALSE
+    UserURLs
+WHERE
+    url_id in (1,2,3,4)
 GROUP BY 
-    U.user_id, U.user_name
+    user_id
 ORDER BY 
     url_count DESC;
+
+-- name: CountGetBookmarkedUsersURLCounts :one
+-- @desc: Count target that each user's bookmarked urls
+SELECT
+  COUNT(*)
+FROM
+  (
+    SELECT
+      user_id,
+      COUNT(user_id) AS url_count
+    FROM
+      UserURLs
+    WHERE
+      url_id IN (1, 2, 3, 4)
+    GROUP BY
+      user_id
+    HAVING
+      COUNT(user_id) = 4
+  ) AS subquery;
