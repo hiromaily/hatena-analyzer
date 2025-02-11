@@ -7,7 +7,6 @@ import (
 	"log/slog"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"github.com/jackc/pgx/v5"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/influxdb"
+	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
 )
 
@@ -36,7 +36,7 @@ type registry struct {
 
 	// common instance
 	logger          logger.Logger
-	postgresClient  *pgx.Conn
+	postgresClient  rdb.RDBClient
 	influxdbClient  influxdb2.Client
 	mongodbClient   *mongo.Client
 	bookmarkFetcher fetcher.BookmarkFetcher
@@ -196,13 +196,13 @@ func (r *registry) newLogger() logger.Logger {
 	return r.logger
 }
 
-func (r *registry) newPostgresClient() *pgx.Conn {
+func (r *registry) newPostgresClient() rdb.RDBClient {
 	if r.postgresClient == nil {
-		conn, err := pgx.Connect(context.Background(), r.envConf.PostgresURL)
+		pgClient, err := rdb.NewSqlcPostgresClient(context.Background(), r.envConf.PostgresURL)
 		if err != nil {
 			panic(err)
 		}
-		r.postgresClient = conn
+		r.postgresClient = pgClient
 	}
 	return r.postgresClient
 }
