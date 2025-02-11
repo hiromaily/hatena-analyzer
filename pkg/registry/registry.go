@@ -17,6 +17,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/handler"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
+	"github.com/hiromaily/hatena-fake-detector/pkg/storage/influxdb"
 	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
 )
 
@@ -209,6 +210,11 @@ func (r *registry) newPostgresClient() *pgx.Conn {
 func (r *registry) newInfluxdbClient() influxdb2.Client {
 	if r.influxdbClient == nil {
 		r.influxdbClient = influxdb2.NewClient(r.envConf.InfluxdbURL, r.envConf.InfluxdbToken)
+		// ping
+		err := influxdb.Ping(r.influxdbClient, r.envConf.InfluxdbOrg, r.envConf.InfluxdbBucket)
+		if err != nil {
+			panic(err)
+		}
 	}
 	return r.influxdbClient
 }
