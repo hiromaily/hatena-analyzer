@@ -6,67 +6,85 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
 )
-
-// type RDBClient interface {
-// 	Close(ctx context.Context) error
-// 	Begin(ctx context.Context) error
-// 	Commit(ctx context.Context) error
-// 	Rollback(ctx context.Context) error
-// 	ExecuteSQLFile(ctx context.Context, filepath string) error
-// }
 
 //
 // Sqlc with PostgreSQL
 //
 
 type SqlcPostgresClient struct {
-	db        *pgx.Conn
-	tx        pgx.Tx
-	Queries   *sqlcgen.Queries
-	QueriesTx *sqlcgen.Queries
+	pool *pgxpool.Pool // pool for concurrent connection
+	tx   pgx.Tx        // created when Begin() is called
 }
 
-func NewSqlcPostgresClient(ctx context.Context, dataSourceName string) (*SqlcPostgresClient, error) {
+func NewSqlcPostgresClient(
+	ctx context.Context,
+	dataSourceName string,
+	maxConnection int32,
+) (*SqlcPostgresClient, error) {
 	// validation
 	if dataSourceName == "" {
 		return nil, errors.New("dataSourceName is empty")
 	}
+	if maxConnection == 0 {
+		return nil, errors.New("maxConnection doesn't allow 0")
+	}
 
-	db, err := pgx.Connect(ctx, dataSourceName)
+	// use Pool
+	config, err := pgxpool.ParseConfig(dataSourceName)
+	if err != nil {
+		return nil, err
+	}
+	// set config
+	config.MaxConns = maxConnection
+
+	// create pool
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, err
 	}
 
-	queries := sqlcgen.New(db)
-
 	return &SqlcPostgresClient{
-		db:        db,
-		tx:        nil,
-		Queries:   queries,
-		QueriesTx: nil,
+		pool: pool,
+		tx:   nil,
 	}, nil
 }
 
+func (s *SqlcPostgresClient) GetQueries(ctx context.Context) (*sqlcgen.Queries, func(), error) {
+	queries, release, err := func() (*sqlcgen.Queries, func(), error) {
+		// use pool
+		conn, err := s.pool.Acquire(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		return sqlcgen.New(conn), conn.Release, nil
+	}()
+	if err != nil {
+		return nil, nil, err
+	}
+	if s.tx != nil {
+		return queries.WithTx(s.tx), release, nil
+	}
+	return queries, release, nil
+}
+
 // Close db connection
-func (s *SqlcPostgresClient) Close(ctx context.Context) error {
-	if s.db != nil {
-		return s.db.Close(ctx)
+func (s *SqlcPostgresClient) Close(_ context.Context) error {
+	if s.pool != nil {
+		s.pool.Close()
 	}
 	return nil
 }
 
 func (s *SqlcPostgresClient) Begin(ctx context.Context) error {
-	tx, err := s.db.Begin(ctx)
+	tx, err := s.pool.Begin(ctx) // FIXME: maybe wrong
 	if err != nil {
 		return err
 	}
-	qtx := s.Queries.WithTx(tx)
 	s.tx = tx
-	s.QueriesTx = qtx
-
 	return nil
 }
 
@@ -76,7 +94,6 @@ func (s *SqlcPostgresClient) Commit(ctx context.Context) error {
 		return err
 	}
 	s.tx = nil
-	s.QueriesTx = nil
 	return nil
 }
 
@@ -86,7 +103,6 @@ func (s *SqlcPostgresClient) Rollback(ctx context.Context) error {
 		return err
 	}
 	s.tx = nil
-	s.QueriesTx = nil
 	return nil
 }
 
@@ -97,7 +113,7 @@ func (s *SqlcPostgresClient) ExecuteSQLFile(ctx context.Context, filepath string
 		return err
 	}
 
-	_, err = s.db.Exec(ctx, string(sqlBytes))
+	_, err = s.pool.Exec(ctx, string(sqlBytes))
 	if err != nil {
 		return err
 	}

@@ -141,7 +141,12 @@ func (r *rdbBookmarkRepository) Close(ctx context.Context) error {
 // }
 
 func (r *rdbBookmarkRepository) InsertURL(ctx context.Context, url string) (int32, error) {
-	return r.rdbClient.Queries.InsertURL(ctx, url)
+	queries, release, err := r.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer release()
+	return queries.InsertURL(ctx, url)
 }
 
 // func (r *rdbBookmarkRepository) InsertUser(ctx context.Context, userName string) error {
@@ -149,7 +154,12 @@ func (r *rdbBookmarkRepository) InsertURL(ctx context.Context, url string) (int3
 // }
 
 func (r *rdbBookmarkRepository) UpsertUser(ctx context.Context, userName string) (int32, error) {
-	return r.rdbClient.Queries.UpsertUser(ctx, userName)
+	queries, release, err := r.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer release()
+	return queries.UpsertUser(ctx, userName)
 }
 
 func (r *rdbBookmarkRepository) UpsertUserURLs(ctx context.Context, userID, urlID int32) error {
@@ -157,7 +167,12 @@ func (r *rdbBookmarkRepository) UpsertUserURLs(ctx context.Context, userID, urlI
 		UserID: userID,
 		UrlID:  urlID,
 	}
-	return r.rdbClient.Queries.UpsertUserURLs(ctx, param)
+	queries, release, err := r.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return err
+	}
+	defer release()
+	return queries.UpsertUserURLs(ctx, param)
 }
 
 //

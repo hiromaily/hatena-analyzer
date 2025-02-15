@@ -30,6 +30,8 @@ type registry struct {
 	isCLI         bool
 	targetHandler handler.Handler
 
+	maxConnection int32 // max connection for pgxpool
+
 	// repositories
 	bookmarkRepo repository.BookmarkRepositorier
 	summaryRepo  repository.SummaryRepositorier
@@ -51,11 +53,12 @@ func NewRegistry(
 	urls []string,
 ) Registry {
 	reg := registry{
-		envConf:  envConf,
-		appCode:  appCode,
-		commitID: commitID,
-		urls:     urls,
-		isCLI:    appCode != app.AppCodeWeb, // CLI mode
+		envConf:       envConf,
+		appCode:       appCode,
+		commitID:      commitID,
+		urls:          urls,
+		isCLI:         appCode != app.AppCodeWeb, // CLI mode
+		maxConnection: 100,                       // max connection for pgxpool
 	}
 	reg.targetFunc()
 	return &reg
@@ -144,6 +147,7 @@ func (r *registry) newUpdateUserInfoUsecase() usecase.UpdateUserInfoUsecaser {
 		r.newLogger(),
 		r.newUserRepository(),
 		r.newUserBookmarkFetcher(),
+		10, // maxWorker
 	)
 	return usecase
 }
@@ -231,7 +235,11 @@ func (r *registry) newLogger() logger.Logger {
 
 func (r *registry) newPostgresClient() *rdb.SqlcPostgresClient {
 	if r.postgresClient == nil {
-		pgClient, err := rdb.NewSqlcPostgresClient(context.Background(), r.envConf.PostgresURL)
+		pgClient, err := rdb.NewSqlcPostgresClient(
+			context.Background(),
+			r.envConf.PostgresURL,
+			r.maxConnection,
+		)
 		if err != nil {
 			panic(err)
 		}

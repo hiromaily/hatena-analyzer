@@ -13,6 +13,7 @@ import (
 type UserRepositorier interface {
 	Close(ctx context.Context) error
 	GetUsers(ctx context.Context) ([]string, error)
+	UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error
 }
 
 type rdbUserRepository struct {
@@ -35,7 +36,12 @@ func (r *rdbUserRepository) Close(ctx context.Context) error {
 }
 
 func (r *rdbUserRepository) GetUsers(ctx context.Context) ([]string, error) {
-	return r.rdbClient.Queries.GetUsers(ctx)
+	queries, release, err := r.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	return queries.GetUsers(ctx)
 }
 
 func (r *rdbUserRepository) UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error {
@@ -43,6 +49,11 @@ func (r *rdbUserRepository) UpdateUserBookmarkCount(ctx context.Context, userNam
 		BookmarkCount: pgtype.Int4{Int32: int32(count), Valid: true},
 		UserName:      userName,
 	}
-	_, err := r.rdbClient.Queries.UpdateUserBookmarkCount(ctx, param)
+	queries, release, err := r.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return err
+	}
+	defer release()
+	_, err = queries.UpdateUserBookmarkCount(ctx, param)
 	return err
 }
