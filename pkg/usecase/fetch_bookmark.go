@@ -9,6 +9,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
+	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 )
 
 type FetchBookmarkUsecaser interface {
@@ -176,10 +177,17 @@ func (f *fetchBookmarkUsecase) save(ctx context.Context, url string, bookmark *e
 	// }
 
 	urlID, err := f.bookmarkRepo.InsertURL(ctx, url)
-	if err != nil {
+	if err != nil && !rdb.IsNoRows(err) {
 		f.logger.Error("failed to call bookmarkRepo.InsertURL()", "url", url, "error", err)
 		return err
 	}
+	if urlID == 0 {
+		// TODO: urlIDを取得する必要がある
+		err := errors.New("urlID is 0")
+		f.logger.Error("failed to call bookmarkRepo.InsertURL()", "url", url, "error", err)
+		return err
+	}
+
 	for _, users := range bookmark.Users {
 		// Users
 		userID, err := f.bookmarkRepo.UpsertUser(ctx, users.Name)
@@ -189,6 +197,8 @@ func (f *fetchBookmarkUsecase) save(ctx context.Context, url string, bookmark *e
 		// UserURLs
 		err = f.bookmarkRepo.UpsertUserURLs(ctx, userID, urlID)
 		if err != nil {
+			// FIXME: ERROR: insert or update on table "userurls" violates foreign key
+			// constraint "userurls_url_id_fkey" (SQLSTATE 23503)
 			f.logger.Warn(
 				"failed to call bookmarkRepo.UpsertUserURLs()",
 				"userID", userID,

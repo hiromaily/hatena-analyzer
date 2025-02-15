@@ -20,7 +20,7 @@ import (
 type BookmarkRepositorier interface {
 	Close(ctx context.Context)
 	// PostgreSQL
-	// GetURLID(ctx context.Context, url string) (int32, error)
+	GetURLID(ctx context.Context, url string) (int32, error)
 	InsertURL(ctx context.Context, url string) (int32, error)
 	// InsertUser(ctx context.Context, userName string) error
 	UpsertUser(ctx context.Context, userName string) (int32, error)
@@ -66,9 +66,9 @@ func (b *bookmarkRepository) Close(ctx context.Context) {
 
 // PostgreSQL
 
-// func (b *bookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
-// 	return b.rdbBookmarkRepo.GetURLID(ctx, url)
-// }
+func (b *bookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
+	return b.rdbBookmarkRepo.GetURLID(ctx, url)
+}
 
 func (b *bookmarkRepository) InsertURL(ctx context.Context, url string) (int32, error) {
 	return b.rdbBookmarkRepo.InsertURL(ctx, url)
@@ -136,9 +136,14 @@ func (r *rdbBookmarkRepository) Close(ctx context.Context) error {
 	return r.rdbClient.Close(ctx)
 }
 
-// func (r *rdbBookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
-// 	return r.rdbClient.Queries.GetUrlID(ctx, url)
-// }
+func (r *rdbBookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
+	queries, release, err := r.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer release()
+	return queries.GetUrlID(ctx, url)
+}
 
 func (r *rdbBookmarkRepository) InsertURL(ctx context.Context, url string) (int32, error) {
 	queries, release, err := r.rdbClient.GetQueries(ctx)

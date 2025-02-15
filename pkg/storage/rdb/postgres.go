@@ -15,6 +15,11 @@ import (
 // Sqlc with PostgreSQL
 //
 
+func IsNoRows(err error) bool {
+	// "no rows in result set"
+	return errors.Is(err, pgx.ErrNoRows)
+}
+
 type SqlcPostgresClient struct {
 	pool *pgxpool.Pool // pool for concurrent connection
 	tx   pgx.Tx        // created when Begin() is called

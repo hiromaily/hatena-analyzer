@@ -164,13 +164,15 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]User,
 }
 
 const insertURL = `-- name: InsertURL :one
-INSERT INTO
-  URLs (url_address)
-VALUES
-  ($1)
-ON CONFLICT (url_address) DO NOTHING
-RETURNING
-  url_id
+WITH insert_result AS (
+	INSERT INTO URLs (url_address)
+	VALUES ($1)
+	ON CONFLICT (url_address) DO NOTHING
+	RETURNING url_id
+)
+SELECT url_id FROM insert_result
+UNION ALL
+SELECT url_id FROM URLs WHERE url_address = $1 LIMIT 1
 `
 
 // @desc: insert url if not existed and return url_id
@@ -182,6 +184,7 @@ func (q *Queries) InsertURL(ctx context.Context, urlAddress string) (int32, erro
 }
 
 const insertUser = `-- name: InsertUser :one
+
 INSERT INTO
   Users (user_name)
 VALUES
@@ -191,6 +194,19 @@ RETURNING
   user_id
 `
 
+// INSERT INTO
+//
+//	URLs (url_address)
+//
+// VALUES
+//
+//	($1)
+//
+// ON CONFLICT (url_address) DO NOTHING
+// RETURNING
+//
+//	url_id;
+//
 // @desc: Deprecated!!! insert user if not existed and return user_id
 func (q *Queries) InsertUser(ctx context.Context, userName string) (int32, error) {
 	row := q.db.QueryRow(ctx, insertUser, userName)
