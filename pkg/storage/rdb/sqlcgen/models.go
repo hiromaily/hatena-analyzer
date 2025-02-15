@@ -17,11 +17,12 @@ type Url struct {
 }
 
 type User struct {
-	UserID    int32
-	UserName  string
-	IsDeleted pgtype.Bool
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	UserID        int32
+	UserName      string
+	BookmarkCount pgtype.Int4
+	IsDeleted     pgtype.Bool
+	CreatedAt     pgtype.Timestamp
+	UpdatedAt     pgtype.Timestamp
 }
 
 type Userurl struct {

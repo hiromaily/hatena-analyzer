@@ -33,13 +33,15 @@ type registry struct {
 	// repositories
 	bookmarkRepo repository.BookmarkRepositorier
 	summaryRepo  repository.SummaryRepositorier
+	userRepo     repository.UserRepositorier
 
 	// common instance
-	logger          logger.Logger
-	postgresClient  *rdb.SqlcPostgresClient
-	influxdbClient  influxdb2.Client
-	mongodbClient   *mongo.Client
-	bookmarkFetcher fetcher.BookmarkFetcher
+	logger              logger.Logger
+	postgresClient      *rdb.SqlcPostgresClient
+	influxdbClient      influxdb2.Client
+	mongodbClient       *mongo.Client
+	bookmarkFetcher     fetcher.BookmarkFetcher
+	userBookmarkFetcher fetcher.UserBookmarkFetcher
 }
 
 func NewRegistry(
@@ -82,6 +84,8 @@ func (r *registry) targetFunc() {
 		r.targetHandler = r.newFetchBookmarkHandler()
 	case r.appCode == app.AppCodeViewSummary:
 		r.targetHandler = r.newViewSummaryHanlder()
+	case r.appCode == app.AppCodeUpdateUserInfo:
+		r.targetHandler = r.newUpdateUserInfoHandler()
 	}
 	if r.targetHandler != nil {
 		return
@@ -99,6 +103,10 @@ func (r *registry) newFetchBookmarkHandler() handler.Handler {
 
 func (r *registry) newViewSummaryHanlder() handler.Handler {
 	return handler.NewViewSummaryCLIHandler(r.newLogger(), r.newViewSummaryUsecase())
+}
+
+func (r *registry) newUpdateUserInfoHandler() handler.Handler {
+	return handler.NewUpdateUserInfoCLIHandler(r.newLogger(), r.newUpdateUserInfoUsecase())
 }
 
 ///
@@ -128,6 +136,15 @@ func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
 	if err != nil {
 		panic(err)
 	}
+	return usecase
+}
+
+func (r *registry) newUpdateUserInfoUsecase() usecase.UpdateUserInfoUsecaser {
+	usecase := usecase.NewUpdateUserInfoUsecase(
+		r.newLogger(),
+		r.newUserRepository(),
+		r.newUserBookmarkFetcher(),
+	)
 	return usecase
 }
 
@@ -179,6 +196,17 @@ func (r *registry) newSummaryRepository() repository.SummaryRepositorier {
 		)
 	}
 	return r.summaryRepo
+}
+
+func (r *registry) newUserRepository() repository.UserRepositorier {
+	if r.userRepo == nil {
+		// PosgreSQL implementation
+		r.userRepo = repository.NewRDBUserRepository(
+			r.newLogger(),
+			r.newPostgresClient(),
+		)
+	}
+	return r.userRepo
 }
 
 ///
@@ -241,4 +269,11 @@ func (r *registry) newBookmarkFetcher() fetcher.BookmarkFetcher {
 		r.bookmarkFetcher = fetcher.NewBookmarkFetcher(r.newLogger())
 	}
 	return r.bookmarkFetcher
+}
+
+func (r *registry) newUserBookmarkFetcher() fetcher.UserBookmarkFetcher {
+	if r.userBookmarkFetcher == nil {
+		r.userBookmarkFetcher = fetcher.NewBookmarkUserFetcher(r.newLogger())
+	}
+	return r.userBookmarkFetcher
 }

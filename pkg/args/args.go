@@ -14,9 +14,9 @@ type Args struct {
 	Version bool     // global option
 	URLs    []string `arg:"--urls,env:URLS"` // global option
 
-	FetchCommand         *SubCommand `arg:"subcommand:fetch-bookmark"`  // fetch latest bookmark entity
-	ViewSummaryCommand   *SubCommand `arg:"subcommand:view-summary"`    // view time series bookmark summary
-	FetchUserInfoCommand *SubCommand `arg:"subcommand:fetch-user-info"` // fetch user info from bookmark url
+	FetchCommand          *SubCommand `arg:"subcommand:fetch-bookmark"`   // fetch latest bookmark entity
+	ViewSummaryCommand    *SubCommand `arg:"subcommand:view-summary"`     // view time series bookmark summary
+	UpdateUserInfoCommand *SubCommand `arg:"subcommand:update-user-info"` // fetch user info from bookmark url
 }
 
 func Parse() (*Args, *arg.Parser, app.AppCode) {
@@ -31,8 +31,8 @@ func getAppCode(args *Args) app.AppCode {
 		return app.AppCodeFetchBookmark
 	case args.ViewSummaryCommand != nil:
 		return app.AppCodeViewSummary
-	case args.FetchUserInfoCommand != nil:
-		return app.AppCodeFetchUserInfo
+	case args.UpdateUserInfoCommand != nil:
+		return app.AppCodeUpdateUserInfo
 	}
 	panic(fmt.Errorf("subcommand is not found"))
 }

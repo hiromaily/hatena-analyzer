@@ -3,7 +3,6 @@ package fetcher
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"time"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
@@ -40,7 +39,7 @@ func (b *bookmarkFetcher) Entity(ctx context.Context, url string) (*entities.Boo
 
 	// warning: net/http.Get must not be called (noctx)
 	// resp, err := http.Get(apiURL)
-	resp, err := b.request(ctx, apiURL)
+	resp, err := Request(ctx, apiURL)
 	if err != nil {
 		return nil, err
 	}
@@ -66,24 +65,4 @@ func (b *bookmarkFetcher) Entity(ctx context.Context, url string) (*entities.Boo
 		Users:     users,
 		Timestamp: time.Now(),
 	}, nil
-}
-
-func (b *bookmarkFetcher) request(ctx context.Context, apiURL string) (*http.Response, error) {
-	// set 10 seconds timeout
-	// use new context due to multiple calls
-	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	// defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
 }

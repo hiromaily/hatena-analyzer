@@ -18,6 +18,23 @@ FROM
 WHERE
   url.url_address = $1;
 
+-- name: GetUsers :many
+-- @desc: get users
+SELECT
+  u.user_name
+FROM
+  Users u
+WHERE
+  u.is_deleted = FALSE;
+
+-- name: UpdateUserBookmarkCount :one
+-- @desc: update user bookmark count and return url_id
+UPDATE Users
+  SET bookmark_count = $1, updated_at = CURRENT_TIMESTAMP
+WHERE user_name = $2 
+RETURNING
+  user_id;
+
 -- name: InsertURL :one
 -- @desc: insert url if not existed and return url_id
 INSERT INTO

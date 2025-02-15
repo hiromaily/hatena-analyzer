@@ -61,12 +61,18 @@ gen-db-all: copy-query gen-db-code
 #------------------------------------------------------------------------------
 
 # Fetch bookmarked entity from URL and save data to the database
-.PHONY: run-fetch
-run-fetch:
-	go run ./cmd/fake-detector/ fetch
+.PHONY: fetch-bookmark
+fetch-bookmark:
+	go run ./cmd/fake-detector/ fetch-bookmark
 
 # View time series data of the summary of bookmarked entity
 .PHONY: view-summary
 view-summary:
 	go run ./cmd/fake-detector/ view-summary
 
+.PHONY: update-user-info
+update-user-info:
+	go run ./cmd/fake-detector/ update-user-info
+
+.PHONY: run-all
+run-all: fetch-bookmark update-user-info

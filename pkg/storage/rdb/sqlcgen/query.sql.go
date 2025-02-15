@@ -7,6 +7,8 @@ package sqlcgen
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countGetBookmarkedUsersURLCounts = `-- name: CountGetBookmarkedUsersURLCounts :one
@@ -92,9 +94,39 @@ func (q *Queries) GetUrlID(ctx context.Context, urlAddress string) (int32, error
 	return url_id, err
 }
 
+const getUsers = `-- name: GetUsers :many
+SELECT
+  u.user_name
+FROM
+  Users u
+WHERE
+  u.is_deleted = FALSE
+`
+
+// @desc: get users
+func (q *Queries) GetUsers(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, getUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var user_name string
+		if err := rows.Scan(&user_name); err != nil {
+			return nil, err
+		}
+		items = append(items, user_name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUsersByURL = `-- name: GetUsersByURL :many
 SELECT
-  u.user_id, u.user_name, u.is_deleted, u.created_at, u.updated_at
+  u.user_id, u.user_name, u.bookmark_count, u.is_deleted, u.created_at, u.updated_at
 FROM
   Users u
   INNER JOIN UserURLs uu ON u.user_id = uu.user_id
@@ -116,6 +148,7 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]User,
 		if err := rows.Scan(
 			&i.UserID,
 			&i.UserName,
+			&i.BookmarkCount,
 			&i.IsDeleted,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -161,6 +194,27 @@ RETURNING
 // @desc: Deprecated!!! insert user if not existed and return user_id
 func (q *Queries) InsertUser(ctx context.Context, userName string) (int32, error) {
 	row := q.db.QueryRow(ctx, insertUser, userName)
+	var user_id int32
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
+const updateUserBookmarkCount = `-- name: UpdateUserBookmarkCount :one
+UPDATE Users
+  SET bookmark_count = $1, updated_at = CURRENT_TIMESTAMP
+WHERE user_name = $2 
+RETURNING
+  user_id
+`
+
+type UpdateUserBookmarkCountParams struct {
+	BookmarkCount pgtype.Int4
+	UserName      string
+}
+
+// @desc: update user bookmark count and return url_id
+func (q *Queries) UpdateUserBookmarkCount(ctx context.Context, arg UpdateUserBookmarkCountParams) (int32, error) {
+	row := q.db.QueryRow(ctx, updateUserBookmarkCount, arg.BookmarkCount, arg.UserName)
 	var user_id int32
 	err := row.Scan(&user_id)
 	return user_id, err
