@@ -169,20 +169,12 @@ func (f *fetchBookmarkUsecase) save(ctx context.Context, url string, bookmark *e
 		return err
 	}
 
-	// PostgreSQL
-	// urlID, err := f.bookmarkRepo.GetURLID(ctx, url)
-	// if err != nil {
-	// 	f.logger.Error("failed to call bookmarkRepo.GetURLID()", "url", url, "error", err)
-	// 	return err
-	// }
-
 	urlID, err := f.bookmarkRepo.InsertURL(ctx, url)
 	if err != nil && !rdb.IsNoRows(err) {
 		f.logger.Error("failed to call bookmarkRepo.InsertURL()", "url", url, "error", err)
 		return err
 	}
 	if urlID == 0 {
-		// TODO: urlIDを取得する必要がある
 		err := errors.New("urlID is 0")
 		f.logger.Error("failed to call bookmarkRepo.InsertURL()", "url", url, "error", err)
 		return err
@@ -197,7 +189,7 @@ func (f *fetchBookmarkUsecase) save(ctx context.Context, url string, bookmark *e
 		// UserURLs
 		err = f.bookmarkRepo.UpsertUserURLs(ctx, userID, urlID)
 		if err != nil {
-			// FIXME: ERROR: insert or update on table "userurls" violates foreign key
+			// FIXED: ERROR: insert or update on table "userurls" violates foreign key
 			// constraint "userurls_url_id_fkey" (SQLSTATE 23503)
 			f.logger.Warn(
 				"failed to call bookmarkRepo.UpsertUserURLs()",

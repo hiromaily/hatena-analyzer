@@ -75,11 +75,11 @@ func (s *updateUserInfoUsecase) concurrentExecuter(ctx context.Context, users []
 				s.logger.Error("failed to get user bookmark count", "user_name", userName, "error", err)
 				return
 			}
-			s.logger.Debug("user info", "user_name", userName, "bm_count", bmCount)
+			//s.logger.Debug("user info", "user_name", userName, "bm_count", bmCount)
 
 			// 2-2. 取得した情報をDBに保存
 			if err := s.userRepo.UpdateUserBookmarkCount(ctx, userName, bmCount); err != nil {
-				//FIXME: failed to deallocate cached statement(s): conn busy
+				//FIXED: failed to deallocate cached statement(s): conn busy
 				s.logger.Error("failed to update user bookmark count", "user_name", userName, "error", err)
 				return
 			}

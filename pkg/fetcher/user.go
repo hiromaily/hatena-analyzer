@@ -49,6 +49,9 @@ func (b *bookmarkUserFetcher) UserBookmark(ctx context.Context, userName string)
 	if !found {
 		return 0, fmt.Errorf("failed to get user bookmark count. user: %s", userName)
 	}
+	if count == 0 {
+		b.logger.Warn("bookmark count is 0", "user", userName)
+	}
 
 	return count, nil
 }
@@ -70,7 +73,6 @@ func hasClass(n *html.Node, class string) bool {
 func extractBookmarkCount(n *html.Node, class string) (int, bool) {
 	if n.Type == html.ElementNode && n.Data == "span" && hasClass(n, class) && n.FirstChild != nil {
 		// remove comma first
-		// data := strings.Replace(n.FirstChild.Data, ",", "", -1)
 		data := strings.ReplaceAll(n.FirstChild.Data, ",", "")
 		if value, err := strconv.Atoi(data); err == nil {
 			return value, true
