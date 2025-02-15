@@ -9,6 +9,7 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/app"
 	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
@@ -18,6 +19,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/influxdb"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
+	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
 	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
 )
 
@@ -30,8 +32,6 @@ type registry struct {
 	isCLI         bool
 	targetHandler handler.Handler
 
-	maxConnection int32 // max connection for pgxpool
-
 	// repositories
 	bookmarkRepo repository.BookmarkRepositorier
 	summaryRepo  repository.SummaryRepositorier
@@ -39,6 +39,7 @@ type registry struct {
 
 	// common instance
 	logger              logger.Logger
+	tracer              tracer.Tracer
 	postgresClient      *rdb.SqlcPostgresClient
 	influxdbClient      influxdb2.Client
 	mongodbClient       *mongo.Client
@@ -53,12 +54,11 @@ func NewRegistry(
 	urls []string,
 ) Registry {
 	reg := registry{
-		envConf:       envConf,
-		appCode:       appCode,
-		commitID:      commitID,
-		urls:          urls,
-		isCLI:         appCode != app.AppCodeWeb, // CLI mode
-		maxConnection: 100,                       // max connection for pgxpool
+		envConf:  envConf,
+		appCode:  appCode,
+		commitID: commitID,
+		urls:     urls,
+		isCLI:    appCode != app.AppCodeWeb, // CLI mode
 	}
 	reg.targetFunc()
 	return &reg
@@ -120,6 +120,7 @@ func (r *registry) newUpdateUserInfoHandler() handler.Handler {
 func (r *registry) newFetchBookmarkUsecase() usecase.FetchBookmarkUsecaser {
 	usecase, err := usecase.NewFetchBookmarkUsecase(
 		r.newLogger(),
+		r.newTracer(r.appCode.String()),
 		r.newBookmarkRepository(),
 		r.newBookmarkFetcher(),
 		r.urls,
@@ -133,6 +134,7 @@ func (r *registry) newFetchBookmarkUsecase() usecase.FetchBookmarkUsecaser {
 func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
 	usecase, err := usecase.NewViewSummaryUsecase(
 		r.newLogger(),
+		r.newTracer(r.appCode.String()),
 		r.newSummaryRepository(),
 		r.urls,
 	)
@@ -143,12 +145,16 @@ func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
 }
 
 func (r *registry) newUpdateUserInfoUsecase() usecase.UpdateUserInfoUsecaser {
-	usecase := usecase.NewUpdateUserInfoUsecase(
+	usecase, err := usecase.NewUpdateUserInfoUsecase(
 		r.newLogger(),
+		r.newTracer(r.appCode.String()),
 		r.newUserRepository(),
 		r.newUserBookmarkFetcher(),
-		10, // maxWorker
+		r.envConf.MaxWorkers, // maxWorker
 	)
+	if err != nil {
+		panic(err)
+	}
 	return usecase
 }
 
@@ -233,12 +239,43 @@ func (r *registry) newLogger() logger.Logger {
 	return r.logger
 }
 
+func (r *registry) newTracer(tracerName string) tracer.Tracer {
+	if r.tracer == nil {
+		var err error
+		serviceName := r.envConf.TracerServiceName
+		version := r.envConf.TracerVersion
+		sampler := sdktrace.AlwaysSample()
+		tracerMode := tracer.ValidateTracerEnv(r.envConf.Tracer)
+
+		switch tracerMode {
+		case tracer.TracerModeNOOP:
+			r.tracer = tracer.NewNoopProvider()
+		case tracer.TracerModeJaegerHTTP:
+			host := "localhost:4318"
+			r.tracer, err = tracer.NewJaegerHTTPProvider(host, serviceName, tracerName, version, sampler)
+		case tracer.TracerModeJaegerGRPC:
+			host := "localhost:4317"
+			r.tracer, err = tracer.NewJaegerGRPCProvider(host, serviceName, tracerName, version, sampler)
+		// case tracer.TracerModeDataDog:
+		// 	// datadog
+		// 	r.tracer, err = tracer.NewDatadogOtelProvider(tracerName, version, isDebug)
+		// 	r.tracer = tracer.NewDatadogTracer()
+		default:
+			err = errors.New("environment variable: Tracer is invalid")
+		}
+		if err != nil {
+			panic(err)
+		}
+	}
+	return r.tracer
+}
+
 func (r *registry) newPostgresClient() *rdb.SqlcPostgresClient {
 	if r.postgresClient == nil {
 		pgClient, err := rdb.NewSqlcPostgresClient(
 			context.Background(),
 			r.envConf.PostgresURL,
-			r.maxConnection,
+			r.envConf.DBMaxConnections,
 		)
 		if err != nil {
 			panic(err)

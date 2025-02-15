@@ -9,6 +9,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/times"
+	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
 )
 
 type ViewSummaryUsecaser interface {
@@ -17,12 +18,14 @@ type ViewSummaryUsecaser interface {
 
 type summaryUsecase struct {
 	logger      logger.Logger
+	tracer      tracer.Tracer
 	summaryRepo repository.SummaryRepositorier
 	urls        []string
 }
 
 func NewViewSummaryUsecase(
 	logger logger.Logger,
+	tracer tracer.Tracer,
 	summaryRepo repository.SummaryRepositorier,
 	urls []string,
 ) (*summaryUsecase, error) {
@@ -33,6 +36,7 @@ func NewViewSummaryUsecase(
 
 	return &summaryUsecase{
 		logger:      logger,
+		tracer:      tracer,
 		summaryRepo: summaryRepo,
 		urls:        urls,
 	}, nil
@@ -41,6 +45,12 @@ func NewViewSummaryUsecase(
 func (s *summaryUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
 	defer s.summaryRepo.Close(ctx)
+
+	_, span := s.tracer.NewSpan(ctx, "summaryUsecase:Execute()")
+	defer func() {
+		span.End()
+		s.tracer.Close(ctx)
+	}()
 
 	for _, url := range s.urls {
 		// get summaries

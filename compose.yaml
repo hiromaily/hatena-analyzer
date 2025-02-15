@@ -45,6 +45,19 @@ services:
         source: influxdb2-config
         target: /etc/influxdb2
 
+  # https://www.jaegertracing.io/docs/1.63/getting-started/
+  # run by `docker compose --profile monitoring up -d`
+  jaeger:
+    image: jaegertracing/all-in-one:1.63.0
+    # profiles:
+    #   - tracing
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686" # ダッシュボード用のポート
+      - "4318:4318" # exporterの利用するプロトコル: HTTP
+      - "4317:4317" # exporterの利用するプロトコル: gRPC
+
 volumes:
   pgdata:
   mongo-data:

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"golang.org/x/sync/semaphore"
@@ -9,6 +10,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
+	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
 )
 
 type UpdateUserInfoUsecaser interface {
@@ -17,6 +19,7 @@ type UpdateUserInfoUsecaser interface {
 
 type updateUserInfoUsecase struct {
 	logger      logger.Logger
+	tracer      tracer.Tracer
 	userRepo    repository.UserRepositorier
 	userFetcher fetcher.UserBookmarkFetcher
 	maxWorker   int64 // for semaphore
@@ -24,21 +27,33 @@ type updateUserInfoUsecase struct {
 
 func NewUpdateUserInfoUsecase(
 	logger logger.Logger,
+	tracer tracer.Tracer,
 	userRepo repository.UserRepositorier,
 	userFetcher fetcher.UserBookmarkFetcher,
 	maxWorker int64,
-) *updateUserInfoUsecase {
+) (*updateUserInfoUsecase, error) {
+	if maxWorker == 0 {
+		return nil, errors.New("maxWorker is 0")
+	}
+
 	return &updateUserInfoUsecase{
 		logger:      logger,
+		tracer:      tracer,
 		userRepo:    userRepo,
 		userFetcher: userFetcher,
 		maxWorker:   maxWorker,
-	}
+	}, nil
 }
 
 func (s *updateUserInfoUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
 	defer s.userRepo.Close(ctx)
+
+	_, span := s.tracer.NewSpan(ctx, "updateUserInfoUsecase:Execute()")
+	defer func() {
+		span.End()
+		s.tracer.Close(ctx)
+	}()
 
 	// 1. DBからuser一覧を取得
 	users, err := s.userRepo.GetUsers(ctx)
@@ -75,7 +90,7 @@ func (s *updateUserInfoUsecase) concurrentExecuter(ctx context.Context, users []
 				s.logger.Error("failed to get user bookmark count", "user_name", userName, "error", err)
 				return
 			}
-			//s.logger.Debug("user info", "user_name", userName, "bm_count", bmCount)
+			// s.logger.Debug("user info", "user_name", userName, "bm_count", bmCount)
 
 			// 2-2. 取得した情報をDBに保存
 			if err := s.userRepo.UpdateUserBookmarkCount(ctx, userName, bmCount); err != nil {

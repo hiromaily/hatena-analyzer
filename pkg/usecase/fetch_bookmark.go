@@ -10,6 +10,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
+	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
 )
 
 type FetchBookmarkUsecaser interface {
@@ -18,6 +19,7 @@ type FetchBookmarkUsecaser interface {
 
 type fetchBookmarkUsecase struct {
 	logger          logger.Logger
+	tracer          tracer.Tracer
 	bookmarkRepo    repository.BookmarkRepositorier
 	bookmarkFetcher fetcher.BookmarkFetcher
 	urls            []string
@@ -25,6 +27,7 @@ type fetchBookmarkUsecase struct {
 
 func NewFetchBookmarkUsecase(
 	logger logger.Logger,
+	tracer tracer.Tracer,
 	bookmarkRepo repository.BookmarkRepositorier,
 	bookmarkFetcher fetcher.BookmarkFetcher,
 	urls []string,
@@ -36,6 +39,7 @@ func NewFetchBookmarkUsecase(
 
 	return &fetchBookmarkUsecase{
 		logger:          logger,
+		tracer:          tracer,
 		bookmarkRepo:    bookmarkRepo,
 		bookmarkFetcher: bookmarkFetcher,
 		urls:            urls,
@@ -45,6 +49,12 @@ func NewFetchBookmarkUsecase(
 func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
 	defer f.bookmarkRepo.Close(ctx)
+
+	_, span := f.tracer.NewSpan(ctx, "fetchBookmarkUsecase:Execute()")
+	defer func() {
+		span.End()
+		f.tracer.Close(ctx)
+	}()
 
 	for _, url := range f.urls {
 		// load
