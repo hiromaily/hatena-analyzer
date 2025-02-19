@@ -4,7 +4,7 @@ type AppCode string
 
 // AppCode
 const (
-	AppCodeFetchPageURLs          = AppCode("FetchPageURLs")
+	AppCodeFetchHatenaPageURLs    = AppCode("FetchHatenaPageURLs")
 	AppCodeFetchBookmarkEntities  = AppCode("FetchBookmarkEntities")
 	AppCodeFetchUserBookmarkCount = AppCode("FetchUserBookmarkCount")
 	AppCodeViewSummary            = AppCode("ViewSummary")

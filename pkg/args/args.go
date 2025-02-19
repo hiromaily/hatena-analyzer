@@ -18,6 +18,8 @@ type Args struct {
 	Version bool     // global option
 	URLs    []string `arg:"--urls,env:URLS"` // global option
 
+	// fetch URLs from hatena pages
+	FetchHatenaPageURLsCommand *SubCommand `arg:"subcommand:fetch-hatena-page-urls"`
 	// fetch bookmark entity from bookmark url
 	FetchBookmarkEntitiesCommand *SubCommand `arg:"subcommand:fetch-bookmark"`
 	// fetch user bookmark count from bookmark url

@@ -9,11 +9,11 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
 )
 
-type FetchURLsUsecaser interface {
+type FetchHatenaPageURLsUsecaser interface {
 	Execute(ctx context.Context) error
 }
 
-type fetchURLsUsecase struct {
+type fetchHatenaPageURLsUsecase struct {
 	logger            logger.Logger
 	tracer            tracer.Tracer
 	bookmarkRepo      repository.BookmarkRepositorier
@@ -21,12 +21,12 @@ type fetchURLsUsecase struct {
 	targetURLs        []string
 }
 
-func NewFetchURLsUsecase(
+func NewFetchHatenaPageURLsUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
 	bookmarkRepo repository.BookmarkRepositorier,
 	hatenaPageFetcher fetcher.HatenaPageFetcher,
-) (*fetchURLsUsecase, error) {
+) (*fetchHatenaPageURLsUsecase, error) {
 	// validation
 
 	targetURLs := []string{
@@ -34,7 +34,7 @@ func NewFetchURLsUsecase(
 		"https://b.hatena.ne.jp/entrylist/all",
 	}
 
-	return &fetchURLsUsecase{
+	return &fetchHatenaPageURLsUsecase{
 		logger:            logger,
 		tracer:            tracer,
 		bookmarkRepo:      bookmarkRepo,
@@ -45,7 +45,7 @@ func NewFetchURLsUsecase(
 
 // Fetch bookmark users, title, count related given URLs using Hatena entity API and save data to DB
 
-func (f *fetchURLsUsecase) Execute(ctx context.Context) error {
+func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
 	defer f.bookmarkRepo.Close(ctx)
 
@@ -55,9 +55,21 @@ func (f *fetchURLsUsecase) Execute(ctx context.Context) error {
 		f.tracer.Close(ctx)
 	}()
 
-	// for _, url := range f.targetURLs {
-	// 	// fetch page
-	// }
+	totalFetchedURLs := []string{}
+	for _, url := range f.targetURLs {
+		// fetch page
+		pageURLs, err := f.hatenaPageFetcher.Fetch(ctx, url)
+		if err != nil {
+			f.logger.Error("failed to fetch page", "url", url, "error", err)
+			return err
+		}
+		if len(pageURLs) == 0 {
+			f.logger.Warn("no URLs are fetched", "url", url)
+			continue
+		}
+		totalFetchedURLs = append(totalFetchedURLs, pageURLs...)
+	}
+	// TODO: save fetched URLs to DB
 
 	return nil
 }

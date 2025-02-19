@@ -11,23 +11,23 @@ import (
 // fetchURLsCLIHandler
 //
 
-type fetchURLsCLIHandler struct {
+type fetchHatenaPageURLsCLIHandler struct {
 	logger  logger.Logger
-	usecase usecase.FetchURLsUsecaser
+	usecase usecase.FetchHatenaPageURLsUsecaser
 }
 
 func NewFetchURLsCLIHandler(
 	logger logger.Logger,
-	usecase usecase.FetchURLsUsecaser,
-) *fetchURLsCLIHandler {
-	return &fetchURLsCLIHandler{
+	usecase usecase.FetchHatenaPageURLsUsecaser,
+) *fetchHatenaPageURLsCLIHandler {
+	return &fetchHatenaPageURLsCLIHandler{
 		logger:  logger,
 		usecase: usecase,
 	}
 }
 
-func (f *fetchURLsCLIHandler) Handler(ctx context.Context) error {
-	f.logger.Info("fetchURLsCLIHandler Handler")
+func (f *fetchHatenaPageURLsCLIHandler) Handler(ctx context.Context) error {
+	f.logger.Info("fetchHatenaPageURLsCLIHandler Handler")
 
 	err := f.usecase.Execute(ctx)
 	if err != nil {
