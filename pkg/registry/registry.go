@@ -199,11 +199,21 @@ func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 func (r *registry) newSummaryRepository() repository.SummaryRepositorier {
 	if r.summaryRepo == nil {
 		// InfluxDB implementation
-		r.summaryRepo = repository.NewInfluxDBSummaryRepository(
+		influxDBSummaryRepo := repository.NewInfluxDBSummaryRepository(
 			r.newLogger(),
 			r.newInfluxdbClient(),
 			r.envConf.InfluxdbOrg,
 			r.envConf.InfluxdbBucket,
+		)
+		// PosgreSQL implementation
+		rdbSummaryRepo := repository.NewRDBSummaryRepository(
+			r.newLogger(),
+			r.newPostgresClient(),
+		)
+		r.summaryRepo = repository.NewSummaryRepository(
+			r.newLogger(),
+			rdbSummaryRepo,
+			influxDBSummaryRepo,
 		)
 	}
 	return r.summaryRepo

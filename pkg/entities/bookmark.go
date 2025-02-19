@@ -7,7 +7,7 @@ import (
 type Bookmark struct {
 	Title     string `json:"title"`
 	Count     int    `json:"count"`
-	Users     map[string]User
+	Users     map[string]BookmarkUser
 	Timestamp time.Time
 }
 
@@ -29,7 +29,7 @@ type BookmarkSummary struct {
 	Timestamp        time.Time
 }
 
-type User struct {
+type BookmarkUser struct {
 	Name        string `json:"name"`
 	IsCommented bool   `json:"is_commented"`
 	IsDeleted   bool   `json:"is_deleted"`

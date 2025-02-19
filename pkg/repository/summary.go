@@ -8,13 +8,58 @@ import (
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 
+	"github.com/hiromaily/hatena-fake-detector/pkg/adapter"
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
+	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 )
 
 type SummaryRepositorier interface {
 	Close(ctx context.Context)
 	ReadEntitySummaries(ctx context.Context, url string) ([]*entities.BookmarkSummary, error)
+	GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error)
+}
+
+//
+// summaryRepository Implementation
+//
+
+type summaryRepository struct {
+	logger              logger.Logger
+	rdbSummaryRepo      *rdbSummaryRepository
+	influxDBSummaryRepo *influxDBSummaryRepository
+}
+
+func NewSummaryRepository(
+	logger logger.Logger,
+	rdbSummaryRepo *rdbSummaryRepository,
+	influxDBSummaryRepo *influxDBSummaryRepository,
+) *summaryRepository {
+	return &summaryRepository{
+		logger:              logger,
+		rdbSummaryRepo:      rdbSummaryRepo,
+		influxDBSummaryRepo: influxDBSummaryRepo,
+	}
+}
+
+func (s *summaryRepository) Close(ctx context.Context) {
+	s.rdbSummaryRepo.Close(ctx)
+	s.influxDBSummaryRepo.Close(ctx)
+}
+
+// InfluxDB
+
+func (s *summaryRepository) ReadEntitySummaries(
+	ctx context.Context,
+	url string,
+) ([]*entities.BookmarkSummary, error) {
+	return s.influxDBSummaryRepo.ReadEntitySummaries(ctx, url)
+}
+
+// PostgreSQL
+
+func (s *summaryRepository) GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error) {
+	return s.rdbSummaryRepo.GetUsersByURL(ctx, url)
 }
 
 //
@@ -75,11 +120,19 @@ func (i *influxDBSummaryRepository) ReadEntitySummaries(
 		record := result.Record()
 		timeStamp := record.Time()
 
+		// Get title tag
+		title, ok := record.ValueByKey("title").(string)
+		if !ok {
+			i.logger.Error("expecting title to be string")
+			title = "unknown" // fallback value
+		}
+
 		// For each record, retrieve corresponding BookmarkSummary or create a new one if it doesn't exist
 		bookmarkSummary, ok := recordsMap[timeStamp]
 		if !ok {
 			bookmarkSummary = &entities.BookmarkSummary{
 				Timestamp: timeStamp,
+				Title:     title,
 			}
 			recordsMap[timeStamp] = bookmarkSummary
 		}
@@ -123,4 +176,41 @@ func (i *influxDBSummaryRepository) ReadEntitySummaries(
 	})
 
 	return summaries, nil
+}
+
+//
+// PostgresSummaryRepository Implementation
+//
+
+type rdbSummaryRepository struct {
+	logger    logger.Logger
+	rdbClient *rdb.SqlcPostgresClient
+}
+
+func NewRDBSummaryRepository(
+	logger logger.Logger,
+	rdbClient *rdb.SqlcPostgresClient,
+) *rdbSummaryRepository {
+	return &rdbSummaryRepository{
+		logger:    logger,
+		rdbClient: rdbClient,
+	}
+}
+
+func (r *rdbSummaryRepository) Close(ctx context.Context) error {
+	return r.rdbClient.Close(ctx)
+}
+
+func (r *rdbSummaryRepository) GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error) {
+	queries, release, err := r.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	users, err := queries.GetUsersByURL(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	// convert to entity models
+	return adapter.UserDBToEntityModel(users), nil
 }

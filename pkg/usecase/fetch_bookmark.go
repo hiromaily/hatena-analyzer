@@ -65,7 +65,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 
 		// set isDeleted = `true` on existingBookmark.Users
 		for userName := range existingBookmark.Users {
-			existingBookmark.Users[userName] = entities.User{
+			existingBookmark.Users[userName] = entities.BookmarkUser{
 				Name:        userName,
 				IsDeleted:   true,
 				IsCommented: existingBookmark.Users[userName].IsCommented,
@@ -84,7 +84,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 		existingBookmark.Timestamp = newBookmark.Timestamp
 		// overwrite `isDeleted` with `false` if user is still exist
 		for userName, user := range newBookmark.Users {
-			existingBookmark.Users[userName] = entities.User{
+			existingBookmark.Users[userName] = entities.BookmarkUser{
 				Name:        userName,
 				IsDeleted:   false,
 				IsCommented: user.IsCommented,
@@ -135,7 +135,7 @@ func (f *fetchBookmarkUsecase) load(ctx context.Context, url string) (*entities.
 		f.logger.Debug("entity not found on DB", "url", url)
 		// initialize entities.Bookmark
 		existingBookmark = &entities.Bookmark{}
-		existingBookmark.Users = make(map[string]entities.User)
+		existingBookmark.Users = make(map[string]entities.BookmarkUser)
 	}
 
 	f.logger.Info("bookmark entity loaded",

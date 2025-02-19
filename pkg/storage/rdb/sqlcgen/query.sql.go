@@ -94,7 +94,7 @@ func (q *Queries) GetUrlID(ctx context.Context, urlAddress string) (int32, error
 	return url_id, err
 }
 
-const getUsers = `-- name: GetUsers :many
+const getUserNames = `-- name: GetUserNames :many
 SELECT
   u.user_name
 FROM
@@ -104,8 +104,78 @@ WHERE
 `
 
 // @desc: get users
-func (q *Queries) GetUsers(ctx context.Context) ([]string, error) {
-	rows, err := q.db.Query(ctx, getUsers)
+func (q *Queries) GetUserNames(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, getUserNames)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var user_name string
+		if err := rows.Scan(&user_name); err != nil {
+			return nil, err
+		}
+		items = append(items, user_name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserNamesByURL = `-- name: GetUserNamesByURL :many
+SELECT
+  u.user_name
+FROM
+  Users u
+  INNER JOIN UserURLs uu ON u.user_id = uu.user_id
+  INNER JOIN URLs url ON uu.url_id = url.url_id
+WHERE
+  u.is_deleted = FALSE
+  AND url.is_deleted = FALSE
+  AND uu.is_deleted = FALSE
+  AND url.url_address = $1
+`
+
+// @desc: get target users by url
+func (q *Queries) GetUserNamesByURL(ctx context.Context, urlAddress string) ([]string, error) {
+	rows, err := q.db.Query(ctx, getUserNamesByURL, urlAddress)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var user_name string
+		if err := rows.Scan(&user_name); err != nil {
+			return nil, err
+		}
+		items = append(items, user_name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserNamesByURLs = `-- name: GetUserNamesByURLs :many
+SELECT
+  u.user_name
+FROM
+  Users u
+  INNER JOIN UserURLs uu ON u.user_id = uu.user_id
+  INNER JOIN URLs url ON uu.url_id = url.url_id
+WHERE
+  u.is_deleted = FALSE
+  AND url.is_deleted = FALSE
+  AND uu.is_deleted = FALSE
+  AND url.url_address = ANY($1::text[])
+`
+
+// @desc: get target users by multiple urls
+func (q *Queries) GetUserNamesByURLs(ctx context.Context, dollar_1 []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, getUserNamesByURLs, dollar_1)
 	if err != nil {
 		return nil, err
 	}
@@ -126,63 +196,39 @@ func (q *Queries) GetUsers(ctx context.Context) ([]string, error) {
 
 const getUsersByURL = `-- name: GetUsersByURL :many
 SELECT
-  u.user_name
+  u.user_name, u.bookmark_count
 FROM
   Users u
   INNER JOIN UserURLs uu ON u.user_id = uu.user_id
   INNER JOIN URLs url ON uu.url_id = url.url_id
 WHERE
   u.is_deleted = FALSE
+  AND url.is_deleted = FALSE
+  AND uu.is_deleted = FALSE
   AND url.url_address = $1
+ORDER BY
+  u.bookmark_count DESC
 `
 
+type GetUsersByURLRow struct {
+	UserName      string
+	BookmarkCount pgtype.Int4
+}
+
 // @desc: get target users by url
-func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]string, error) {
+func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]GetUsersByURLRow, error) {
 	rows, err := q.db.Query(ctx, getUsersByURL, urlAddress)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []string
+	var items []GetUsersByURLRow
 	for rows.Next() {
-		var user_name string
-		if err := rows.Scan(&user_name); err != nil {
+		var i GetUsersByURLRow
+		if err := rows.Scan(&i.UserName, &i.BookmarkCount); err != nil {
 			return nil, err
 		}
-		items = append(items, user_name)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getUsersByURLs = `-- name: GetUsersByURLs :many
-SELECT
-  u.user_name
-FROM
-  Users u
-  INNER JOIN UserURLs uu ON u.user_id = uu.user_id
-  INNER JOIN URLs url ON uu.url_id = url.url_id
-WHERE
-  u.is_deleted = FALSE
-  AND url.url_address = ANY($1::text[])
-`
-
-// @desc: get target users by multiple urls
-func (q *Queries) GetUsersByURLs(ctx context.Context, dollar_1 []string) ([]string, error) {
-	rows, err := q.db.Query(ctx, getUsersByURLs, dollar_1)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var user_name string
-		if err := rows.Scan(&user_name); err != nil {
-			return nil, err
-		}
-		items = append(items, user_name)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

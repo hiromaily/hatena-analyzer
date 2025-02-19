@@ -50,9 +50,9 @@ func (b *bookmarkFetcher) Entity(ctx context.Context, url string) (*entities.Boo
 		return nil, err
 	}
 
-	users := make(map[string]entities.User)
+	users := make(map[string]entities.BookmarkUser)
 	for _, bookmark := range data.Bookmarks {
-		users[bookmark.User] = entities.User{
+		users[bookmark.User] = entities.BookmarkUser{
 			Name:        bookmark.User,
 			IsDeleted:   false,
 			IsCommented: bookmark.Comment != "",

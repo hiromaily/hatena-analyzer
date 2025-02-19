@@ -12,8 +12,8 @@ import (
 
 type UserRepositorier interface {
 	Close(ctx context.Context) error
-	GetUsers(ctx context.Context) ([]string, error)
-	GetUsersByURLS(ctx context.Context, urls []string) ([]string, error)
+	GetUserNames(ctx context.Context) ([]string, error)
+	GetUserNamesByURLS(ctx context.Context, urls []string) ([]string, error)
 	UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error
 }
 
@@ -36,22 +36,22 @@ func (r *rdbUserRepository) Close(ctx context.Context) error {
 	return r.rdbClient.Close(ctx)
 }
 
-func (r *rdbUserRepository) GetUsers(ctx context.Context) ([]string, error) {
+func (r *rdbUserRepository) GetUserNames(ctx context.Context) ([]string, error) {
 	queries, release, err := r.rdbClient.GetQueries(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer release()
-	return queries.GetUsers(ctx)
+	return queries.GetUserNames(ctx)
 }
 
-func (r *rdbUserRepository) GetUsersByURLS(ctx context.Context, urls []string) ([]string, error) {
+func (r *rdbUserRepository) GetUserNamesByURLS(ctx context.Context, urls []string) ([]string, error) {
 	queries, release, err := r.rdbClient.GetQueries(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer release()
-	return queries.GetUsersByURLs(ctx, urls)
+	return queries.GetUserNamesByURLs(ctx, urls)
 }
 
 func (r *rdbUserRepository) UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error {

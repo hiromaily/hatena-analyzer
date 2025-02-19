@@ -62,13 +62,13 @@ func (s *updateUserInfoUsecase) Execute(ctx context.Context) error {
 	var users []string
 	var err error
 	if len(s.urls) == 0 {
-		users, err = s.userRepo.GetUsers(ctx)
+		users, err = s.userRepo.GetUserNames(ctx)
 		if err != nil {
 			s.logger.Error("failed to get users", "error", err)
 			return err
 		}
 	} else {
-		users, err = s.userRepo.GetUsersByURLS(ctx, s.urls)
+		users, err = s.userRepo.GetUserNamesByURLS(ctx, s.urls)
 		if err != nil {
 			s.logger.Error("failed to get users by urls", "error", err)
 			return err
