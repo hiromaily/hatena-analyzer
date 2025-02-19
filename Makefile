@@ -9,7 +9,6 @@ SQLC_BIN=go run github.com/sqlc-dev/sqlc/cmd/sqlc
 
 #------------------------------------------------------------------------------
 # Tools for maintenance
-#  毎回実行する必要はないが、定期的な確認に利用
 #------------------------------------------------------------------------------
 .PHONY: vulncheck
 vulncheck:
@@ -23,7 +22,7 @@ versioncheck:
 # Lint
 #------------------------------------------------------------------------------
 
-# golangciの中で実行される`lll`の設定より短く指定する
+# must be shorter than `lll` settings in golangci-lint
 .PHONY: linecheck
 linecheck:
 	$(GOLINE_BIN) -m 110 -w ./
@@ -60,22 +59,26 @@ gen-db-all: copy-query gen-db-code
 # Execution
 #------------------------------------------------------------------------------
 
-# Fetch bookmarked entity from URLs and save data to the database
-# saved data: bookmark URLs, bookmarked users and relations between them
+# Fetch page urls from the Hatena pages
+# .PHONY: fetch-page-urls
+# fetch-page-urls:
+# 	go run ./cmd/fake-detector/ fetch-page-urls
+
+# Fetch bookmark users, title, count from page of given URL and save data to DB
 .PHONY: fetch-bookmark
 fetch-bookmark:
 	go run ./cmd/fake-detector/ fetch-bookmark
+
+# Fetch user's bookmark count
+.PHONY: fetch-user-bm-count
+fetch-user-bm-count:
+	go run ./cmd/fake-detector/ fetch-user-bm-count
 
 # View time series data of the summary of bookmarked entity
 .PHONY: view-summary
 view-summary:
 	go run ./cmd/fake-detector/ view-summary
 
-# Update user's bookmark count
-.PHONY: update-user-info
-update-user-info:
-	go run ./cmd/fake-detector/ update-user-info
-
 # Run all executions
 .PHONY: run-all
-run-all: fetch-bookmark update-user-info
+run-all: fetch-bookmark fetch-user-bm-count view-summary

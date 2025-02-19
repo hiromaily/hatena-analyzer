@@ -45,5 +45,4 @@ curl -s https://b.hatena.ne.jp/entry/json/https://www.google.co.jp/ | jq '.bookm
 
 ## [はてなブックマーク ユーザー情報 API](https://developer.hatena.ne.jp/ja/documents/bookmark/apis/rest/my/)
 
-認証したユーザーの情報を取得 (つまり自分だけか)
-
+認証したユーザーの情報を取得

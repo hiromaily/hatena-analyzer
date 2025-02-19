@@ -18,18 +18,18 @@ type FetchBookmarkUsecaser interface {
 }
 
 type fetchBookmarkUsecase struct {
-	logger          logger.Logger
-	tracer          tracer.Tracer
-	bookmarkRepo    repository.BookmarkRepositorier
-	bookmarkFetcher fetcher.BookmarkFetcher
-	urls            []string
+	logger            logger.Logger
+	tracer            tracer.Tracer
+	bookmarkRepo      repository.BookmarkRepositorier
+	entityJSONFetcher fetcher.EntityJSONFetcher
+	urls              []string
 }
 
 func NewFetchBookmarkUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
 	bookmarkRepo repository.BookmarkRepositorier,
-	bookmarkFetcher fetcher.BookmarkFetcher,
+	entityJSONFetcher fetcher.EntityJSONFetcher,
 	urls []string,
 ) (*fetchBookmarkUsecase, error) {
 	// validation
@@ -38,13 +38,15 @@ func NewFetchBookmarkUsecase(
 	}
 
 	return &fetchBookmarkUsecase{
-		logger:          logger,
-		tracer:          tracer,
-		bookmarkRepo:    bookmarkRepo,
-		bookmarkFetcher: bookmarkFetcher,
-		urls:            urls,
+		logger:            logger,
+		tracer:            tracer,
+		bookmarkRepo:      bookmarkRepo,
+		entityJSONFetcher: entityJSONFetcher,
+		urls:              urls,
 	}, nil
 }
+
+// Fetch bookmark users, title, count related given URLs using Hatena entity API and save data to DB
 
 func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
@@ -57,7 +59,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 	}()
 
 	for _, url := range f.urls {
-		// load
+		// load page
 		existingBookmark, err := f.load(ctx, url)
 		if err != nil {
 			continue
@@ -148,7 +150,7 @@ func (f *fetchBookmarkUsecase) load(ctx context.Context, url string) (*entities.
 }
 
 func (f *fetchBookmarkUsecase) fetch(ctx context.Context, url string) (*entities.Bookmark, error) {
-	newBookmark, err := f.bookmarkFetcher.Entity(ctx, url)
+	newBookmark, err := f.entityJSONFetcher.Fetch(ctx, url)
 	if err != nil {
 		f.logger.Error("failed to call fetchBookmarkData()", "url", url, "error", err)
 		return nil, err

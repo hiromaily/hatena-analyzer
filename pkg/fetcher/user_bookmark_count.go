@@ -12,21 +12,23 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 )
 
-type bookmarkUserFetcher struct {
+type userBookmarkCountFetcher struct {
 	logger  logger.Logger
 	userURL string
 }
 
-func NewBookmarkUserFetcher(logger logger.Logger) *bookmarkUserFetcher {
-	return &bookmarkUserFetcher{
+func NewUserBookmarkCountFetcher(logger logger.Logger) *userBookmarkCountFetcher {
+	return &userBookmarkCountFetcher{
 		logger:  logger,
 		userURL: "https://b.hatena.ne.jp/%s/",
 	}
 }
 
-func (b *bookmarkUserFetcher) UserBookmark(ctx context.Context, userName string) (int, error) {
+// Fetch bookmark count of user from Hatena user's page
+
+func (u *userBookmarkCountFetcher) Fetch(ctx context.Context, userName string) (int, error) {
 	// Request
-	userURL := fmt.Sprintf(b.userURL, userName)
+	userURL := fmt.Sprintf(u.userURL, userName)
 	resp, err := Request(ctx, userURL)
 	if err != nil {
 		return 0, err
@@ -34,7 +36,7 @@ func (b *bookmarkUserFetcher) UserBookmark(ctx context.Context, userName string)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		b.logger.Error("failed to get user", "status_code", resp.StatusCode)
+		u.logger.Error("failed to get user", "status_code", resp.StatusCode)
 		return 0, fmt.Errorf("failed to get user: status: %d", resp.StatusCode)
 	}
 
@@ -50,7 +52,7 @@ func (b *bookmarkUserFetcher) UserBookmark(ctx context.Context, userName string)
 		return 0, fmt.Errorf("failed to get user bookmark count. user: %s", userName)
 	}
 	if count == 0 {
-		b.logger.Warn("bookmark count is 0", "user", userName)
+		u.logger.Warn("bookmark count is 0", "user", userName)
 	}
 
 	return count, nil

@@ -11,23 +11,23 @@ import (
 // updateUserInfoCLIHandler
 //
 
-type updateUserInfoCLIHandler struct {
+type fetchUserBookmarkCountCLIHandler struct {
 	logger  logger.Logger
-	usecase usecase.UpdateUserInfoUsecaser
+	usecase usecase.FetchUserBookmarkCountUsecaser
 }
 
-func NewUpdateUserInfoCLIHandler(
+func NewFetchUserBookmarkCountCLIHandler(
 	logger logger.Logger,
-	usecase usecase.UpdateUserInfoUsecaser,
-) *updateUserInfoCLIHandler {
-	return &updateUserInfoCLIHandler{
+	usecase usecase.FetchUserBookmarkCountUsecaser,
+) *fetchUserBookmarkCountCLIHandler {
+	return &fetchUserBookmarkCountCLIHandler{
 		logger:  logger,
 		usecase: usecase,
 	}
 }
 
-func (f *updateUserInfoCLIHandler) Handler(ctx context.Context) error {
-	f.logger.Info("updateUserInfoCLIHandler Handler")
+func (f *fetchUserBookmarkCountCLIHandler) Handler(ctx context.Context) error {
+	f.logger.Info("fetchUserBookmarkCountCLIHandler Handler")
 
 	err := f.usecase.Execute(ctx)
 	if err != nil {

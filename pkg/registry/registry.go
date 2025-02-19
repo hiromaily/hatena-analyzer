@@ -38,13 +38,13 @@ type registry struct {
 	userRepo     repository.UserRepositorier
 
 	// common instance
-	logger              logger.Logger
-	tracer              tracer.Tracer
-	postgresClient      *rdb.SqlcPostgresClient
-	influxdbClient      influxdb2.Client
-	mongodbClient       *mongo.Client
-	bookmarkFetcher     fetcher.BookmarkFetcher
-	userBookmarkFetcher fetcher.UserBookmarkFetcher
+	logger                   logger.Logger
+	tracer                   tracer.Tracer
+	postgresClient           *rdb.SqlcPostgresClient
+	influxdbClient           influxdb2.Client
+	mongodbClient            *mongo.Client
+	entityJSONFetcher        fetcher.EntityJSONFetcher
+	userBookmarkCountFetcher fetcher.UserBookmarkCountFetcher
 }
 
 func NewRegistry(
@@ -83,12 +83,12 @@ func (r *registry) targetFunc() {
 	}
 
 	switch {
-	case r.appCode == app.AppCodeFetchBookmark:
+	case r.appCode == app.AppCodeFetchBookmarkEntities:
 		r.targetHandler = r.newFetchBookmarkHandler()
+	case r.appCode == app.AppCodeFetchUserBookmarkCount:
+		r.targetHandler = r.newFetchUserBookmarkCountHandler()
 	case r.appCode == app.AppCodeViewSummary:
 		r.targetHandler = r.newViewSummaryHanlder()
-	case r.appCode == app.AppCodeUpdateUserInfo:
-		r.targetHandler = r.newUpdateUserInfoHandler()
 	}
 	if r.targetHandler != nil {
 		return
@@ -108,8 +108,8 @@ func (r *registry) newViewSummaryHanlder() handler.Handler {
 	return handler.NewViewSummaryCLIHandler(r.newLogger(), r.newViewSummaryUsecase())
 }
 
-func (r *registry) newUpdateUserInfoHandler() handler.Handler {
-	return handler.NewUpdateUserInfoCLIHandler(r.newLogger(), r.newUpdateUserInfoUsecase())
+func (r *registry) newFetchUserBookmarkCountHandler() handler.Handler {
+	return handler.NewFetchUserBookmarkCountCLIHandler(r.newLogger(), r.newFetchUserBookmarkCountUsecase())
 }
 
 ///
@@ -144,12 +144,12 @@ func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
 	return usecase
 }
 
-func (r *registry) newUpdateUserInfoUsecase() usecase.UpdateUserInfoUsecaser {
-	usecase, err := usecase.NewUpdateUserInfoUsecase(
+func (r *registry) newFetchUserBookmarkCountUsecase() usecase.FetchUserBookmarkCountUsecaser {
+	usecase, err := usecase.NewFetchUserBookmarkCountUsecase(
 		r.newLogger(),
 		r.newTracer(r.appCode.String()),
 		r.newUserRepository(),
-		r.newUserBookmarkFetcher(),
+		r.newUserBookmarkCountFetcher(),
 		r.envConf.MaxWorkers, // maxWorker
 		r.urls,
 	)
@@ -320,16 +320,16 @@ func (r *registry) newMongodbClient() *mongo.Client {
 	return r.mongodbClient
 }
 
-func (r *registry) newBookmarkFetcher() fetcher.BookmarkFetcher {
-	if r.bookmarkFetcher == nil {
-		r.bookmarkFetcher = fetcher.NewBookmarkFetcher(r.newLogger())
+func (r *registry) newBookmarkFetcher() fetcher.EntityJSONFetcher {
+	if r.entityJSONFetcher == nil {
+		r.entityJSONFetcher = fetcher.NewEntityJSONFetcher(r.newLogger())
 	}
-	return r.bookmarkFetcher
+	return r.entityJSONFetcher
 }
 
-func (r *registry) newUserBookmarkFetcher() fetcher.UserBookmarkFetcher {
-	if r.userBookmarkFetcher == nil {
-		r.userBookmarkFetcher = fetcher.NewBookmarkUserFetcher(r.newLogger())
+func (r *registry) newUserBookmarkCountFetcher() fetcher.UserBookmarkCountFetcher {
+	if r.userBookmarkCountFetcher == nil {
+		r.userBookmarkCountFetcher = fetcher.NewUserBookmarkCountFetcher(r.newLogger())
 	}
-	return r.userBookmarkFetcher
+	return r.userBookmarkCountFetcher
 }

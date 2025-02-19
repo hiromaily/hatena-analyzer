@@ -10,7 +10,7 @@ import (
 
 type SubCommand struct{}
 
-// type SubCmdUpdateUserInfo struct {
+// type SubCmdFetchUserBookmarkCount struct {
 // 	URL string `arg:"--url"`
 // }
 
@@ -18,9 +18,12 @@ type Args struct {
 	Version bool     // global option
 	URLs    []string `arg:"--urls,env:URLS"` // global option
 
-	FetchCommand          *SubCommand `arg:"subcommand:fetch-bookmark"`   // fetch latest bookmark entity
-	ViewSummaryCommand    *SubCommand `arg:"subcommand:view-summary"`     // view time series bookmark summary
-	UpdateUserInfoCommand *SubCommand `arg:"subcommand:update-user-info"` // update user info from bookmark url
+	// fetch bookmark entity from bookmark url
+	FetchBookmarkEntitiesCommand *SubCommand `arg:"subcommand:fetch-bookmark"`
+	// fetch user bookmark count from bookmark url
+	FetchUserBookmarkCountCommand *SubCommand `arg:"subcommand:fetch-user-bm-count"`
+	// view time series bookmark summary
+	ViewSummaryCommand *SubCommand `arg:"subcommand:view-summary"`
 }
 
 func Parse() (*Args, *arg.Parser, app.AppCode) {
@@ -31,12 +34,12 @@ func Parse() (*Args, *arg.Parser, app.AppCode) {
 
 func getAppCode(args *Args) app.AppCode {
 	switch {
-	case args.FetchCommand != nil:
-		return app.AppCodeFetchBookmark
+	case args.FetchBookmarkEntitiesCommand != nil:
+		return app.AppCodeFetchBookmarkEntities
+	case args.FetchUserBookmarkCountCommand != nil:
+		return app.AppCodeFetchUserBookmarkCount
 	case args.ViewSummaryCommand != nil:
 		return app.AppCodeViewSummary
-	case args.UpdateUserInfoCommand != nil:
-		return app.AppCodeUpdateUserInfo
 	}
 	panic(fmt.Errorf("subcommand is not found"))
 }

@@ -4,10 +4,12 @@ type AppCode string
 
 // AppCode
 const (
-	AppCodeFetchBookmark  = AppCode("FetchBookmark")
-	AppCodeViewSummary    = AppCode("ViewSummary")
-	AppCodeUpdateUserInfo = AppCode("UpdateUserInfo")
-	AppCodeWeb            = AppCode("WebServer")
+	AppCodeFetchPageURLs          = AppCode("FetchPageURLs")
+	AppCodeFetchBookmarkEntities  = AppCode("FetchBookmarkEntities")
+	AppCodeFetchUserBookmarkCount = AppCode("FetchUserBookmarkCount")
+	AppCodeViewSummary            = AppCode("ViewSummary")
+
+	AppCodeWeb = AppCode("WebServer")
 )
 
 func (a AppCode) String() string {

@@ -9,13 +9,13 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 )
 
-type bookmarkFetcher struct {
+type entityJSONFetcher struct {
 	logger    logger.Logger
 	entityURL string
 }
 
-func NewBookmarkFetcher(logger logger.Logger) *bookmarkFetcher {
-	return &bookmarkFetcher{
+func NewEntityJSONFetcher(logger logger.Logger) *entityJSONFetcher {
+	return &entityJSONFetcher{
 		logger:    logger,
 		entityURL: "https://b.hatena.ne.jp/entry/json/",
 	}
@@ -34,8 +34,10 @@ type Data struct {
 	Bookmarks []Bookmark `json:"bookmarks"`
 }
 
-func (b *bookmarkFetcher) Entity(ctx context.Context, url string) (*entities.Bookmark, error) {
-	apiURL := b.entityURL + url
+// Call Hatena entity API to get bookmark users, title, count
+
+func (e *entityJSONFetcher) Fetch(ctx context.Context, url string) (*entities.Bookmark, error) {
+	apiURL := e.entityURL + url
 
 	// warning: net/http.Get must not be called (noctx)
 	// resp, err := http.Get(apiURL)

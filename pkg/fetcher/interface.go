@@ -6,10 +6,14 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 )
 
-type BookmarkFetcher interface {
-	Entity(ctx context.Context, url string) (*entities.Bookmark, error)
+type HatenaPageFetcher interface {
+	Fetch(ctx context.Context, url string) ([]string, error)
 }
 
-type UserBookmarkFetcher interface {
-	UserBookmark(ctx context.Context, userName string) (int, error)
+type EntityJSONFetcher interface {
+	Fetch(ctx context.Context, url string) (*entities.Bookmark, error)
+}
+
+type UserBookmarkCountFetcher interface {
+	Fetch(ctx context.Context, userName string) (int, error)
 }
