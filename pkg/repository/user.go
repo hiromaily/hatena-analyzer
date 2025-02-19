@@ -13,6 +13,7 @@ import (
 type UserRepositorier interface {
 	Close(ctx context.Context) error
 	GetUsers(ctx context.Context) ([]string, error)
+	GetUsersByURLS(ctx context.Context, urls []string) ([]string, error)
 	UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error
 }
 
@@ -42,6 +43,15 @@ func (r *rdbUserRepository) GetUsers(ctx context.Context) ([]string, error) {
 	}
 	defer release()
 	return queries.GetUsers(ctx)
+}
+
+func (r *rdbUserRepository) GetUsersByURLS(ctx context.Context, urls []string) ([]string, error) {
+	queries, release, err := r.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	return queries.GetUsersByURLs(ctx, urls)
 }
 
 func (r *rdbUserRepository) UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error {

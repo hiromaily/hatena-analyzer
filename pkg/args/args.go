@@ -10,13 +10,17 @@ import (
 
 type SubCommand struct{}
 
+// type SubCmdUpdateUserInfo struct {
+// 	URL string `arg:"--url"`
+// }
+
 type Args struct {
 	Version bool     // global option
 	URLs    []string `arg:"--urls,env:URLS"` // global option
 
 	FetchCommand          *SubCommand `arg:"subcommand:fetch-bookmark"`   // fetch latest bookmark entity
 	ViewSummaryCommand    *SubCommand `arg:"subcommand:view-summary"`     // view time series bookmark summary
-	UpdateUserInfoCommand *SubCommand `arg:"subcommand:update-user-info"` // fetch user info from bookmark url
+	UpdateUserInfoCommand *SubCommand `arg:"subcommand:update-user-info"` // update user info from bookmark url
 }
 
 func Parse() (*Args, *arg.Parser, app.AppCode) {

@@ -126,36 +126,63 @@ func (q *Queries) GetUsers(ctx context.Context) ([]string, error) {
 
 const getUsersByURL = `-- name: GetUsersByURL :many
 SELECT
-  u.user_id, u.user_name, u.bookmark_count, u.is_deleted, u.created_at, u.updated_at
+  u.user_name
 FROM
   Users u
   INNER JOIN UserURLs uu ON u.user_id = uu.user_id
   INNER JOIN URLs url ON uu.url_id = url.url_id
 WHERE
-  url.url_address = $1
+  u.is_deleted = FALSE
+  AND url.url_address = $1
 `
 
 // @desc: get target users by url
-func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]User, error) {
+func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]string, error) {
 	rows, err := q.db.Query(ctx, getUsersByURL, urlAddress)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []string
 	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.UserID,
-			&i.UserName,
-			&i.BookmarkCount,
-			&i.IsDeleted,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
+		var user_name string
+		if err := rows.Scan(&user_name); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, user_name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUsersByURLs = `-- name: GetUsersByURLs :many
+SELECT
+  u.user_name
+FROM
+  Users u
+  INNER JOIN UserURLs uu ON u.user_id = uu.user_id
+  INNER JOIN URLs url ON uu.url_id = url.url_id
+WHERE
+  u.is_deleted = FALSE
+  AND url.url_address = ANY($1::text[])
+`
+
+// @desc: get target users by multiple urls
+func (q *Queries) GetUsersByURLs(ctx context.Context, dollar_1 []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, getUsersByURLs, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var user_name string
+		if err := rows.Scan(&user_name); err != nil {
+			return nil, err
+		}
+		items = append(items, user_name)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

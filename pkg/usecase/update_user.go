@@ -23,6 +23,7 @@ type updateUserInfoUsecase struct {
 	userRepo    repository.UserRepositorier
 	userFetcher fetcher.UserBookmarkFetcher
 	maxWorker   int64 // for semaphore
+	urls        []string
 }
 
 func NewUpdateUserInfoUsecase(
@@ -31,6 +32,7 @@ func NewUpdateUserInfoUsecase(
 	userRepo repository.UserRepositorier,
 	userFetcher fetcher.UserBookmarkFetcher,
 	maxWorker int64,
+	urls []string,
 ) (*updateUserInfoUsecase, error) {
 	if maxWorker == 0 {
 		return nil, errors.New("maxWorker is 0")
@@ -42,6 +44,7 @@ func NewUpdateUserInfoUsecase(
 		userRepo:    userRepo,
 		userFetcher: userFetcher,
 		maxWorker:   maxWorker,
+		urls:        urls,
 	}, nil
 }
 
@@ -56,10 +59,20 @@ func (s *updateUserInfoUsecase) Execute(ctx context.Context) error {
 	}()
 
 	// 1. DBからuser一覧を取得
-	users, err := s.userRepo.GetUsers(ctx)
-	if err != nil {
-		s.logger.Error("failed to get users", "error", err)
-		return err
+	var users []string
+	var err error
+	if len(s.urls) == 0 {
+		users, err = s.userRepo.GetUsers(ctx)
+		if err != nil {
+			s.logger.Error("failed to get users", "error", err)
+			return err
+		}
+	} else {
+		users, err = s.userRepo.GetUsersByURLS(ctx, s.urls)
+		if err != nil {
+			s.logger.Error("failed to get users by urls", "error", err)
+			return err
+		}
 	}
 	// 2. 取得したuser情報からscrapingでユーザーの情報を取得してDBに保存
 	return s.concurrentExecuter(ctx, users)
@@ -68,6 +81,8 @@ func (s *updateUserInfoUsecase) Execute(ctx context.Context) error {
 func (s *updateUserInfoUsecase) concurrentExecuter(ctx context.Context, users []string) error {
 	sem := semaphore.NewWeighted(s.maxWorker)
 	var wg sync.WaitGroup
+
+	s.logger.Info("start concurrentExecuter", "max_worker", s.maxWorker, "user_count", len(users))
 
 	for _, userName := range users {
 		wg.Add(1)

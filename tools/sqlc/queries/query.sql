@@ -7,17 +7,6 @@ FROM
 WHERE
   u.url_address = $1;
 
--- name: GetUsersByURL :many
--- @desc: get target users by url
-SELECT
-  u.*
-FROM
-  Users u
-  INNER JOIN UserURLs uu ON u.user_id = uu.user_id
-  INNER JOIN URLs url ON uu.url_id = url.url_id
-WHERE
-  url.url_address = $1;
-
 -- name: GetUsers :many
 -- @desc: get users
 SELECT
@@ -26,6 +15,30 @@ FROM
   Users u
 WHERE
   u.is_deleted = FALSE;
+
+-- name: GetUsersByURL :many
+-- @desc: get target users by url
+SELECT
+  u.user_name
+FROM
+  Users u
+  INNER JOIN UserURLs uu ON u.user_id = uu.user_id
+  INNER JOIN URLs url ON uu.url_id = url.url_id
+WHERE
+  u.is_deleted = FALSE
+  AND url.url_address = $1;
+
+-- name: GetUsersByURLs :many
+-- @desc: get target users by multiple urls
+SELECT
+  u.user_name
+FROM
+  Users u
+  INNER JOIN UserURLs uu ON u.user_id = uu.user_id
+  INNER JOIN URLs url ON uu.url_id = url.url_id
+WHERE
+  u.is_deleted = FALSE
+  AND url.url_address = ANY($1::text[]);
 
 -- name: UpdateUserBookmarkCount :one
 -- @desc: update user bookmark count and return url_id

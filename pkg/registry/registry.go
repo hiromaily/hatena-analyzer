@@ -151,6 +151,7 @@ func (r *registry) newUpdateUserInfoUsecase() usecase.UpdateUserInfoUsecaser {
 		r.newUserRepository(),
 		r.newUserBookmarkFetcher(),
 		r.envConf.MaxWorkers, // maxWorker
+		r.urls,
 	)
 	if err != nil {
 		panic(err)
