@@ -18,6 +18,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/influxdb"
+	"github.com/hiromaily/hatena-fake-detector/pkg/storage/mongodb"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
 	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
@@ -36,6 +37,10 @@ type registry struct {
 	bookmarkRepo repository.BookmarkRepositorier
 	summaryRepo  repository.SummaryRepositorier
 	userRepo     repository.UserRepositorier
+	// db clients
+	postgresQueries *rdb.PostgreQueries
+	influxDBQueries *influxdb.InfluxDBQueries
+	mongoDBQueries  *mongodb.MongoDBQueries
 
 	// common instance
 	logger                   logger.Logger
@@ -165,32 +170,11 @@ func (r *registry) newFetchUserBookmarkCountUsecase() usecase.FetchUserBookmarkC
 
 func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 	if r.bookmarkRepo == nil {
-		// PosgreSQL implementation
-		postgresBookmarkRepo := repository.NewRDBBookmarkRepository(
-			r.newLogger(),
-			r.newPostgresClient(),
-		)
-
-		// InfluxDB implementation
-		influxdbBookmarkRepo := repository.NewInfluxDBBookmarkRepository(
-			r.newLogger(),
-			r.newInfluxdbClient(),
-			r.envConf.InfluxdbOrg,
-			r.envConf.InfluxdbBucket,
-		)
-		// MongoDB implementation
-		mongodbBookmarkRepo := repository.NewMongoDBBookmarkRepository(
-			r.newLogger(),
-			r.newMongodbClient(),
-			r.envConf.MongodbDB,
-			r.envConf.MongodbCollection,
-		)
-
 		r.bookmarkRepo = repository.NewBookmarkRepository(
 			r.newLogger(),
-			postgresBookmarkRepo,
-			influxdbBookmarkRepo,
-			mongodbBookmarkRepo,
+			r.newPostgresQueries(),
+			r.newInfluxDBQueries(),
+			r.newMongoDBQueries(),
 		)
 	}
 	return r.bookmarkRepo
@@ -198,22 +182,10 @@ func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 
 func (r *registry) newSummaryRepository() repository.SummaryRepositorier {
 	if r.summaryRepo == nil {
-		// InfluxDB implementation
-		influxDBSummaryRepo := repository.NewInfluxDBSummaryRepository(
-			r.newLogger(),
-			r.newInfluxdbClient(),
-			r.envConf.InfluxdbOrg,
-			r.envConf.InfluxdbBucket,
-		)
-		// PosgreSQL implementation
-		rdbSummaryRepo := repository.NewRDBSummaryRepository(
-			r.newLogger(),
-			r.newPostgresClient(),
-		)
 		r.summaryRepo = repository.NewSummaryRepository(
 			r.newLogger(),
-			rdbSummaryRepo,
-			influxDBSummaryRepo,
+			r.newPostgresQueries(),
+			r.newInfluxDBQueries(),
 		)
 	}
 	return r.summaryRepo
@@ -221,13 +193,50 @@ func (r *registry) newSummaryRepository() repository.SummaryRepositorier {
 
 func (r *registry) newUserRepository() repository.UserRepositorier {
 	if r.userRepo == nil {
-		// PosgreSQL implementation
-		r.userRepo = repository.NewRDBUserRepository(
+		r.userRepo = repository.NewUserRepository(
+			r.newLogger(),
+			r.newPostgresQueries(),
+		)
+	}
+	return r.userRepo
+}
+
+///
+/// DB Clients
+///
+
+func (r *registry) newPostgresQueries() *rdb.PostgreQueries {
+	if r.postgresQueries == nil {
+		r.postgresQueries = rdb.NewPostgreQueries(
 			r.newLogger(),
 			r.newPostgresClient(),
 		)
 	}
-	return r.userRepo
+	return r.postgresQueries
+}
+
+func (r *registry) newInfluxDBQueries() *influxdb.InfluxDBQueries {
+	if r.influxDBQueries == nil {
+		r.influxDBQueries = influxdb.NewInfluxDBQueries(
+			r.newLogger(),
+			r.newInfluxdbClient(),
+			r.envConf.InfluxdbOrg,
+			r.envConf.InfluxdbBucket,
+		)
+	}
+	return r.influxDBQueries
+}
+
+func (r *registry) newMongoDBQueries() *mongodb.MongoDBQueries {
+	if r.mongoDBQueries == nil {
+		r.mongoDBQueries = mongodb.NewMongoDBQueries(
+			r.newLogger(),
+			r.newMongodbClient(),
+			r.envConf.MongodbDB,
+			r.envConf.MongodbCollection,
+		)
+	}
+	return r.mongoDBQueries
 }
 
 ///
