@@ -37,6 +37,7 @@ type registry struct {
 	bookmarkRepo repository.BookmarkRepositorier
 	summaryRepo  repository.SummaryRepositorier
 	userRepo     repository.UserRepositorier
+	urlRepo      repository.URLRepositorier
 	// db clients
 	postgresQueries *rdb.PostgreQueries
 	influxDBQueries *influxdb.InfluxDBQueries
@@ -50,6 +51,7 @@ type registry struct {
 	mongodbClient            *mongo.Client
 	entityJSONFetcher        fetcher.EntityJSONFetcher
 	userBookmarkCountFetcher fetcher.UserBookmarkCountFetcher
+	pageURLFetcher           fetcher.HatenaPageURLFetcher
 }
 
 func NewRegistry(
@@ -88,6 +90,8 @@ func (r *registry) targetFunc() {
 	}
 
 	switch {
+	case r.appCode == app.AppCodeFetchHatenaPageURLs:
+		r.targetHandler = r.newFetchHatenaPageURLsHandler()
 	case r.appCode == app.AppCodeFetchBookmarkEntities:
 		r.targetHandler = r.newFetchBookmarkHandler()
 	case r.appCode == app.AppCodeFetchUserBookmarkCount:
@@ -104,6 +108,10 @@ func (r *registry) targetFunc() {
 ///
 /// handlers
 ///
+
+func (r *registry) newFetchHatenaPageURLsHandler() handler.Handler {
+	return handler.NewFetchHatenaPageURLsCLIHandler(r.newLogger(), r.newFetchHatenaPageURLsUsecase())
+}
 
 func (r *registry) newFetchBookmarkHandler() handler.Handler {
 	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase())
@@ -122,6 +130,20 @@ func (r *registry) newFetchUserBookmarkCountHandler() handler.Handler {
 ///
 
 // must be called only once
+
+func (r *registry) newFetchHatenaPageURLsUsecase() usecase.FetchHatenaPageURLsUsecaser {
+	usecase, err := usecase.NewFetchHatenaPageURLsUsecase(
+		r.newLogger(),
+		r.newTracer(r.appCode.String()),
+		r.newURLRepository(),
+		r.newPageURLFetcher(),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return usecase
+}
+
 func (r *registry) newFetchBookmarkUsecase() usecase.FetchBookmarkUsecaser {
 	usecase, err := usecase.NewFetchBookmarkUsecase(
 		r.newLogger(),
@@ -199,6 +221,16 @@ func (r *registry) newUserRepository() repository.UserRepositorier {
 		)
 	}
 	return r.userRepo
+}
+
+func (r *registry) newURLRepository() repository.URLRepositorier {
+	if r.urlRepo == nil {
+		r.urlRepo = repository.NewURLRepository(
+			r.newLogger(),
+			r.newPostgresQueries(),
+		)
+	}
+	return r.urlRepo
 }
 
 ///
@@ -341,4 +373,11 @@ func (r *registry) newUserBookmarkCountFetcher() fetcher.UserBookmarkCountFetche
 		r.userBookmarkCountFetcher = fetcher.NewUserBookmarkCountFetcher(r.newLogger())
 	}
 	return r.userBookmarkCountFetcher
+}
+
+func (r *registry) newPageURLFetcher() fetcher.HatenaPageURLFetcher {
+	if r.pageURLFetcher == nil {
+		r.pageURLFetcher = fetcher.NewHatenaPageURLFetcher(r.newLogger())
+	}
+	return r.pageURLFetcher
 }

@@ -36,6 +36,8 @@ func Parse() (*Args, *arg.Parser, app.AppCode) {
 
 func getAppCode(args *Args) app.AppCode {
 	switch {
+	case args.FetchHatenaPageURLsCommand != nil:
+		return app.AppCodeFetchHatenaPageURLs
 	case args.FetchBookmarkEntitiesCommand != nil:
 		return app.AppCodeFetchBookmarkEntities
 	case args.FetchUserBookmarkCountCommand != nil:

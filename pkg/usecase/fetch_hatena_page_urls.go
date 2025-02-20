@@ -14,32 +14,32 @@ type FetchHatenaPageURLsUsecaser interface {
 }
 
 type fetchHatenaPageURLsUsecase struct {
-	logger            logger.Logger
-	tracer            tracer.Tracer
-	urlRepo           repository.URLRepositorier
-	hatenaPageFetcher fetcher.HatenaPageFetcher
-	targetURLs        []string
+	logger               logger.Logger
+	tracer               tracer.Tracer
+	urlRepo              repository.URLRepositorier
+	hatenaPageURLFetcher fetcher.HatenaPageURLFetcher
+	targetURLs           []string
 }
 
 func NewFetchHatenaPageURLsUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
 	urlRepo repository.URLRepositorier,
-	hatenaPageFetcher fetcher.HatenaPageFetcher,
+	hatenaPageURLFetcher fetcher.HatenaPageURLFetcher,
 ) (*fetchHatenaPageURLsUsecase, error) {
 	// validation
 
 	targetURLs := []string{
 		"https://b.hatena.ne.jp/hotentry/all",
-		"https://b.hatena.ne.jp/entrylist/all",
+		// "https://b.hatena.ne.jp/entrylist/all",
 	}
 
 	return &fetchHatenaPageURLsUsecase{
-		logger:            logger,
-		tracer:            tracer,
-		urlRepo:           urlRepo,
-		hatenaPageFetcher: hatenaPageFetcher,
-		targetURLs:        targetURLs,
+		logger:               logger,
+		tracer:               tracer,
+		urlRepo:              urlRepo,
+		hatenaPageURLFetcher: hatenaPageURLFetcher,
+		targetURLs:           targetURLs,
 	}, nil
 }
 
@@ -58,7 +58,7 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 	totalFetchedURLs := []string{}
 	for _, url := range f.targetURLs {
 		// fetch page
-		pageURLs, err := f.hatenaPageFetcher.Fetch(ctx, url)
+		pageURLs, err := f.hatenaPageURLFetcher.Fetch(ctx, url)
 		if err != nil {
 			f.logger.Error("failed to fetch page", "url", url, "error", err)
 			return err
@@ -69,6 +69,8 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 		}
 		totalFetchedURLs = append(totalFetchedURLs, pageURLs...)
 	}
+	f.logger.Info("total fetched URLs", "count", len(totalFetchedURLs))
+
 	// save fetched URLs to DB
 	if len(totalFetchedURLs) == 0 {
 		f.logger.Warn("no URLs are fetched")

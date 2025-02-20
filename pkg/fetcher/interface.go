@@ -6,7 +6,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 )
 
-type HatenaPageFetcher interface {
+type HatenaPageURLFetcher interface {
 	Fetch(ctx context.Context, url string) ([]string, error)
 }
 

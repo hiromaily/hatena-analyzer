@@ -16,7 +16,7 @@ type fetchHatenaPageURLsCLIHandler struct {
 	usecase usecase.FetchHatenaPageURLsUsecaser
 }
 
-func NewFetchURLsCLIHandler(
+func NewFetchHatenaPageURLsCLIHandler(
 	logger logger.Logger,
 	usecase usecase.FetchHatenaPageURLsUsecaser,
 ) *fetchHatenaPageURLsCLIHandler {
