@@ -257,7 +257,6 @@ func (q *Queries) InsertURL(ctx context.Context, urlAddress string) (int32, erro
 }
 
 const insertUser = `-- name: InsertUser :one
-
 INSERT INTO
   Users (user_name)
 VALUES
@@ -267,19 +266,6 @@ RETURNING
   user_id
 `
 
-// INSERT INTO
-//
-//	URLs (url_address)
-//
-// VALUES
-//
-//	($1)
-//
-// ON CONFLICT (url_address) DO NOTHING
-// RETURNING
-//
-//	url_id;
-//
 // @desc: Deprecated!!! insert user if not existed and return user_id
 func (q *Queries) InsertUser(ctx context.Context, userName string) (int32, error) {
 	row := q.db.QueryRow(ctx, insertUser, userName)

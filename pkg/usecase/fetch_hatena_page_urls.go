@@ -16,7 +16,7 @@ type FetchHatenaPageURLsUsecaser interface {
 type fetchHatenaPageURLsUsecase struct {
 	logger            logger.Logger
 	tracer            tracer.Tracer
-	bookmarkRepo      repository.BookmarkRepositorier
+	urlRepo           repository.URLRepositorier
 	hatenaPageFetcher fetcher.HatenaPageFetcher
 	targetURLs        []string
 }
@@ -24,7 +24,7 @@ type fetchHatenaPageURLsUsecase struct {
 func NewFetchHatenaPageURLsUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
-	bookmarkRepo repository.BookmarkRepositorier,
+	urlRepo repository.URLRepositorier,
 	hatenaPageFetcher fetcher.HatenaPageFetcher,
 ) (*fetchHatenaPageURLsUsecase, error) {
 	// validation
@@ -37,7 +37,7 @@ func NewFetchHatenaPageURLsUsecase(
 	return &fetchHatenaPageURLsUsecase{
 		logger:            logger,
 		tracer:            tracer,
-		bookmarkRepo:      bookmarkRepo,
+		urlRepo:           urlRepo,
 		hatenaPageFetcher: hatenaPageFetcher,
 		targetURLs:        targetURLs,
 	}, nil
@@ -47,7 +47,7 @@ func NewFetchHatenaPageURLsUsecase(
 
 func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
-	defer f.bookmarkRepo.Close(ctx)
+	defer f.urlRepo.Close(ctx)
 
 	_, span := f.tracer.NewSpan(ctx, "fetchURLsUsecase:Execute()")
 	defer func() {
@@ -69,7 +69,10 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 		}
 		totalFetchedURLs = append(totalFetchedURLs, pageURLs...)
 	}
-	// TODO: save fetched URLs to DB
-
-	return nil
+	// save fetched URLs to DB
+	if len(totalFetchedURLs) == 0 {
+		f.logger.Warn("no URLs are fetched")
+		return nil
+	}
+	return f.urlRepo.InsertURLs(ctx, totalFetchedURLs)
 }

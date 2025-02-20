@@ -60,9 +60,9 @@ gen-db-all: copy-query gen-db-code
 #------------------------------------------------------------------------------
 
 # Fetch page urls from the Hatena pages
-# .PHONY: fetch-page-urls
-# fetch-page-urls:
-# 	go run ./cmd/fake-detector/ fetch-page-urls
+.PHONY: fetch-page-urls
+fetch-page-urls:
+	go run ./cmd/fake-detector/ fetch-hatena-page-urls
 
 # Fetch bookmark users, title, count from page of given URL and save data to DB
 .PHONY: fetch-bookmark

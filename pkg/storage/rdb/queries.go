@@ -52,6 +52,15 @@ func (p *PostgreQueries) InsertURL(ctx context.Context, url string) (int32, erro
 	return queries.InsertURL(ctx, url)
 }
 
+func (p *PostgreQueries) InsertURLs(ctx context.Context, urls []string) (int64, error) {
+	queries, release, err := p.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer release()
+	return queries.InsertURLs(ctx, urls)
+}
+
 //
 // users
 //

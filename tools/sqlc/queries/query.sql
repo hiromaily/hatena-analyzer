@@ -87,6 +87,13 @@ SELECT url_id FROM URLs WHERE url_address = $1 LIMIT 1;
 -- RETURNING
 --   url_id;
 
+-- name: InsertURLs :copyfrom
+-- @desc: insert urls if not existed
+INSERT INTO
+  URLs (url_address)
+VALUES
+  ($1);
+
 -- name: InsertUser :one
 -- @desc: Deprecated!!! insert user if not existed and return user_id
 INSERT INTO
