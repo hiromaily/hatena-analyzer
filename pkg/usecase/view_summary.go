@@ -64,6 +64,8 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 		s.urls = entities.FilterURLAddress(entityURLs)
 	}
 
+	validURLCount := 0
+	privateUserRateSum := 0.0
 	for _, url := range s.urls {
 		// get summaries from InfluxDB
 		summaries, err := s.summaryRepo.ReadEntitySummaries(ctx, url)
@@ -75,6 +77,13 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 			s.logger.Warn("no data", "url", url)
 			continue
 		}
+
+		validURLCount++
+		privateUserRateSum += float64(
+			summaries[0].Count-summaries[0].UserCount,
+		) / float64(
+			summaries[0].Count,
+		) * 100
 
 		fmt.Printf("[Summary]\n Title: %s,\n URL: %s\n", summaries[0].Title, url)
 		fmt.Printf(" Time series\n")
@@ -123,6 +132,10 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 		fmt.Printf("  over 10000:   %5d\n", countOver)
 		fmt.Printf(" New user rate:  %.1f\n", newUserRate)
 	}
+
+	// calculate average
+	averagePrivateUserRate := privateUserRateSum / float64(validURLCount)
+	fmt.Printf("Average private user rate: %.1f\n", averagePrivateUserRate)
 
 	return nil
 }
