@@ -1,3 +1,12 @@
+-- name: GetAllURLs :many
+-- @desc: get all url addresses
+SELECT
+  u.url_id, u.url_address
+FROM
+  URLs u
+WHERE
+  u.is_deleted = FALSE;
+
 -- name: GetUrlID :one
 -- @desc: get target url_id by url address
 SELECT

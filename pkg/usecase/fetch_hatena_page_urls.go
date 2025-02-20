@@ -76,5 +76,6 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 		f.logger.Warn("no URLs are fetched")
 		return nil
 	}
+	//FIXME: duplicate key value violates unique constraint "urls_url_address_key" (SQLSTATE 23505)
 	return f.urlRepo.InsertURLs(ctx, totalFetchedURLs)
 }

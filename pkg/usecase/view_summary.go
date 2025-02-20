@@ -2,10 +2,10 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
 	"github.com/hiromaily/hatena-fake-detector/pkg/times"
@@ -30,9 +30,9 @@ func NewViewSummaryUsecase(
 	urls []string,
 ) (*summaryUsecase, error) {
 	// validation
-	if len(urls) == 0 {
-		return nil, errors.New("urls is empty")
-	}
+	// if len(urls) == 0 {
+	// 	return nil, errors.New("urls is empty")
+	// }
 
 	return &summaryUsecase{
 		logger:      logger,
@@ -51,6 +51,18 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 		span.End()
 		s.tracer.Close(ctx)
 	}()
+
+	// get urls from DB if needed
+	var entityURLs []entities.RDBURL
+	if len(s.urls) == 0 {
+		var err error
+		entityURLs, err = s.summaryRepo.GetAllURLs(ctx)
+		if err != nil {
+			s.logger.Error("failed to call bookmarkRepo.GetAllURLs()", "error", err)
+			return err
+		}
+		s.urls = entities.FilterURLAddress(entityURLs)
+	}
 
 	for _, url := range s.urls {
 		// get summaries from InfluxDB
@@ -77,7 +89,7 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 			)
 		}
 
-		// TODO: get user by URL info from DB
+		// get user by URL info from DB
 		users, err := s.summaryRepo.GetUsersByURL(ctx, url)
 		if err != nil {
 			s.logger.Error("failed to call summaryRepo.GetUsersByURL()", "url", url, "error", err)

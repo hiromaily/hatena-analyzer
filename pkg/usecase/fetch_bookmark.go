@@ -33,9 +33,9 @@ func NewFetchBookmarkUsecase(
 	urls []string,
 ) (*fetchBookmarkUsecase, error) {
 	// validation
-	if len(urls) == 0 {
-		return nil, errors.New("urls is empty")
-	}
+	// if len(urls) == 0 {
+	// 	return nil, errors.New("urls is empty")
+	// }
 
 	return &fetchBookmarkUsecase{
 		logger:            logger,
@@ -57,6 +57,18 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 		span.End()
 		f.tracer.Close(ctx)
 	}()
+
+	// get urls from DB if needed
+	var entityURLs []entities.RDBURL
+	if len(f.urls) == 0 {
+		var err error
+		entityURLs, err = f.bookmarkRepo.GetAllURLs(ctx)
+		if err != nil {
+			f.logger.Error("failed to call bookmarkRepo.GetAllURLs()", "error", err)
+			return err
+		}
+		f.urls = entities.FilterURLAddress(entityURLs)
+	}
 
 	for _, url := range f.urls {
 		// load page

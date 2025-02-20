@@ -5,7 +5,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
 )
 
-func UserDBToEntityModel(users []sqlcgen.GetUsersByURLRow) []entities.RDBUser {
+func DBUsersToEntityModel(users []sqlcgen.GetUsersByURLRow) []entities.RDBUser {
 	var userModels []entities.RDBUser
 	for _, user := range users {
 		userModels = append(userModels, entities.RDBUser{

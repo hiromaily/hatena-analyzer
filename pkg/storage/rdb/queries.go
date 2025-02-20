@@ -34,6 +34,22 @@ func (p *PostgreQueries) Close(ctx context.Context) error {
 // urls
 //
 
+func (p *PostgreQueries) GetAllURLs(ctx context.Context) ([]entities.RDBURL, error) {
+	queries, release, err := p.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	urlsRow, err := queries.GetAllURLs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// convert to entity models
+	// []sqlcgen.GetAllURLsRow
+	urls := adapter.DBURLsToEntityModel(urlsRow)
+	return urls, nil
+}
+
 func (p *PostgreQueries) GetURLID(ctx context.Context, url string) (int32, error) {
 	queries, release, err := p.rdbClient.GetQueries(ctx)
 	if err != nil {
@@ -89,7 +105,7 @@ func (p *PostgreQueries) GetUsersByURL(ctx context.Context, url string) ([]entit
 		return nil, err
 	}
 	// convert to entity models
-	return adapter.UserDBToEntityModel(users), nil
+	return adapter.DBUsersToEntityModel(users), nil
 }
 
 func (p *PostgreQueries) GetUserNames(ctx context.Context) ([]string, error) {

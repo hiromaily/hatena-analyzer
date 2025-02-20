@@ -38,6 +38,41 @@ func (q *Queries) CountGetBookmarkedUsersURLCounts(ctx context.Context) (int64, 
 	return count, err
 }
 
+const getAllURLs = `-- name: GetAllURLs :many
+SELECT
+  u.url_id, u.url_address
+FROM
+  URLs u
+WHERE
+  u.is_deleted = FALSE
+`
+
+type GetAllURLsRow struct {
+	UrlID      int32
+	UrlAddress string
+}
+
+// @desc: get all url addresses
+func (q *Queries) GetAllURLs(ctx context.Context) ([]GetAllURLsRow, error) {
+	rows, err := q.db.Query(ctx, getAllURLs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllURLsRow
+	for rows.Next() {
+		var i GetAllURLsRow
+		if err := rows.Scan(&i.UrlID, &i.UrlAddress); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getBookmarkedUsersURLCounts = `-- name: GetBookmarkedUsersURLCounts :many
 SELECT 
     user_id, COUNT(user_id) AS url_count
