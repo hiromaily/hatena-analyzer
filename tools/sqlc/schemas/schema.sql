@@ -8,12 +8,26 @@ CREATE TABLE Users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE URLs (
-    url_id SERIAL PRIMARY KEY,
-    url_address VARCHAR(256) NOT NULL UNIQUE,
+CREATE TABLE Categories (
+    category_id SERIAL PRIMARY KEY,
+    category_code VARCHAR(32) NOT NULL UNIQUE,
+    jp_name VARCHAR(32) NOT NULL UNIQUE,
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE URLs (
+    url_id SERIAL PRIMARY KEY,
+    url_address VARCHAR(256) NOT NULL,
+    category_code VARCHAR(32) NOT NULL,
+    bookmark_count INT DEFAULT 0,
+    named_user_count INT DEFAULT 0,
+    private_user_rate FLOAT DEFAULT 0,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT url_address_category_code_unique UNIQUE(url_address, category_code)
 );
 
 CREATE TABLE UserURLs (

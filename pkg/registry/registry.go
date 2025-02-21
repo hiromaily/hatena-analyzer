@@ -12,6 +12,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/app"
+	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
 	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
 	"github.com/hiromaily/hatena-fake-detector/pkg/handler"
@@ -137,6 +138,7 @@ func (r *registry) newFetchHatenaPageURLsUsecase() usecase.FetchHatenaPageURLsUs
 		r.newTracer(r.appCode.String()),
 		r.newURLRepository(),
 		r.newPageURLFetcher(),
+		entities.Unknown, // TODO: pass from cli args
 	)
 	if err != nil {
 		panic(err)

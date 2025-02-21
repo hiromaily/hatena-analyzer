@@ -15,3 +15,14 @@ func DBURLsToEntityModel(urls []sqlcgen.GetAllURLsRow) []entities.RDBURL {
 	}
 	return urlModels
 }
+
+func CreateInsertURLsParams(category string, urls []string) []sqlcgen.InsertURLsParams {
+	var params []sqlcgen.InsertURLsParams
+	for _, url := range urls {
+		params = append(params, sqlcgen.InsertURLsParams{
+			UrlAddress:   url,
+			CategoryCode: category,
+		})
+	}
+	return params
+}

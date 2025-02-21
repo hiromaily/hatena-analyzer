@@ -11,7 +11,7 @@ import (
 
 // iteratorForInsertURLs implements pgx.CopyFromSource.
 type iteratorForInsertURLs struct {
-	rows                 []string
+	rows                 []InsertURLsParams
 	skippedFirstNextCall bool
 }
 
@@ -29,7 +29,8 @@ func (r *iteratorForInsertURLs) Next() bool {
 
 func (r iteratorForInsertURLs) Values() ([]interface{}, error) {
 	return []interface{}{
-		r.rows[0],
+		r.rows[0].UrlAddress,
+		r.rows[0].CategoryCode,
 	}, nil
 }
 
@@ -37,20 +38,7 @@ func (r iteratorForInsertURLs) Err() error {
 	return nil
 }
 
-// INSERT INTO
-//
-//	URLs (url_address)
-//
-// VALUES
-//
-//	($1)
-//
-// ON CONFLICT (url_address) DO NOTHING
-// RETURNING
-//
-//	url_id;
-//
 // @desc: insert urls if not existed
-func (q *Queries) InsertURLs(ctx context.Context, urlAddress []string) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"urls"}, []string{"url_address"}, &iteratorForInsertURLs{rows: urlAddress})
+func (q *Queries) InsertURLs(ctx context.Context, arg []InsertURLsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"urls"}, []string{"url_address", "category_code"}, &iteratorForInsertURLs{rows: arg})
 }

@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+type BookmarkUser struct {
+	Name        string `json:"name"`
+	IsCommented bool   `json:"is_commented"`
+	IsDeleted   bool   `json:"is_deleted"`
+}
+
 type Bookmark struct {
 	Title     string `json:"title"`
 	Count     int    `json:"count"`
@@ -27,10 +33,4 @@ type BookmarkSummary struct {
 	UserCount        int    `json:"user_count"`
 	DeletedUserCount int    `json:"deleted_user_count"`
 	Timestamp        time.Time
-}
-
-type BookmarkUser struct {
-	Name        string `json:"name"`
-	IsCommented bool   `json:"is_commented"`
-	IsDeleted   bool   `json:"is_deleted"`
 }

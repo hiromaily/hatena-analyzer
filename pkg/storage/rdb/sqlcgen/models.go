@@ -8,12 +8,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Category struct {
+	CategoryID   int32
+	CategoryCode string
+	JpName       string
+	IsDeleted    pgtype.Bool
+	CreatedAt    pgtype.Timestamp
+	UpdatedAt    pgtype.Timestamp
+}
+
 type Url struct {
-	UrlID      int32
-	UrlAddress string
-	IsDeleted  pgtype.Bool
-	CreatedAt  pgtype.Timestamp
-	UpdatedAt  pgtype.Timestamp
+	UrlID           int32
+	UrlAddress      string
+	CategoryCode    string
+	BookmarkCount   pgtype.Int4
+	NamedUserCount  pgtype.Int4
+	PrivateUserRate pgtype.Float8
+	IsDeleted       pgtype.Bool
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
 }
 
 type User struct {

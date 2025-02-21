@@ -284,11 +284,28 @@ SELECT url_id FROM URLs WHERE url_address = $1 LIMIT 1
 `
 
 // @desc: insert url if not existed and return url_id
+// INSERT INTO
+//
+//	URLs (url_address)
+//
+// VALUES
+//
+//	($1)
+//
+// ON CONFLICT (url_address) DO NOTHING
+// RETURNING
+//
+//	url_id;
 func (q *Queries) InsertURL(ctx context.Context, urlAddress string) (int32, error) {
 	row := q.db.QueryRow(ctx, insertURL, urlAddress)
 	var url_id int32
 	err := row.Scan(&url_id)
 	return url_id, err
+}
+
+type InsertURLsParams struct {
+	UrlAddress   string
+	CategoryCode string
 }
 
 const insertUser = `-- name: InsertUser :one

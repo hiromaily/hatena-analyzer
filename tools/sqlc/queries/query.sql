@@ -79,6 +79,13 @@ RETURNING
 
 -- name: InsertURL :one
 -- @desc: insert url if not existed and return url_id
+-- INSERT INTO
+--   URLs (url_address)
+-- VALUES
+--   ($1)
+-- ON CONFLICT (url_address) DO NOTHING
+-- RETURNING
+--   url_id;
 WITH insert_result AS (
 	INSERT INTO URLs (url_address)
 	VALUES ($1)
@@ -88,20 +95,13 @@ WITH insert_result AS (
 SELECT url_id FROM insert_result
 UNION ALL
 SELECT url_id FROM URLs WHERE url_address = $1 LIMIT 1;
--- INSERT INTO
---   URLs (url_address)
--- VALUES
---   ($1)
--- ON CONFLICT (url_address) DO NOTHING
--- RETURNING
---   url_id;
 
 -- name: InsertURLs :copyfrom
 -- @desc: insert urls if not existed
 INSERT INTO
-  URLs (url_address)
+  URLs (url_address, category_code)
 VALUES
-  ($1);
+  ($1, $2);
 
 -- name: InsertUser :one
 -- @desc: Deprecated!!! insert user if not existed and return user_id

@@ -81,4 +81,4 @@ view-summary:
 
 # Run all executions
 .PHONY: run-all
-run-all: fetch-bookmark fetch-user-bm-count view-summary
+run-all: fetch-page-urls fetch-bookmark view-summary
