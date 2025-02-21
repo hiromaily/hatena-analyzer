@@ -24,7 +24,7 @@ func NewHatenaPageURLFetcher(logger logger.Logger) *hatenaPageURLFetcher {
 // Fetch bookmark count of user from Hatena user's page
 
 func (h *hatenaPageURLFetcher) Fetch(ctx context.Context, url string) ([]string, error) {
-	h.logger.Debug("fetching urls of page: ", "url", url)
+	// h.logger.Debug("hatenaPageURLFetcher.Fetch() fetching urls of page: ", "url", url)
 
 	// Request
 	resp, err := Request(ctx, url)

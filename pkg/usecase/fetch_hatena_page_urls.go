@@ -25,6 +25,9 @@ type fetchHatenaPageURLsUsecase struct {
 
 // TODO
 // - add cli parameter: category_code
+// - fetch urls concurrently
+// - add stored procedure to avoid conflict error
+// - add test
 
 func NewFetchHatenaPageURLsUsecase(
 	logger logger.Logger,
@@ -56,13 +59,6 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 		f.tracer.Close(ctx)
 	}()
 
-	// targetURLs := []string{
-	// 	//"https://b.hatena.ne.jp/hotentry/all",
-	// 	//"https://b.hatena.ne.jp/entrylist/all",
-	// 	//"https://b.hatena.ne.jp/hotentry/general",
-	// 	"https://b.hatena.ne.jp/hotentry/it",
-	// }
-
 	targetURLs := []string{}
 	if f.categoryCode == entities.Unknown {
 		categoryCodes := entities.GetCategoryCodeList()
@@ -78,7 +74,14 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 
 	totalFetchedURLs := []string{}
 	for _, url := range targetURLs {
+		category, err := entities.ExtractCategoryFromURL(url)
+		if err != nil {
+			f.logger.Error("failed to extract category from URL", "url", url, "error", err)
+			continue
+		}
+
 		// fetch page
+		f.logger.Info("fetching page", "category", category.String(), "url", url)
 		pageURLs, err := f.hatenaPageURLFetcher.Fetch(ctx, url)
 		if err != nil {
 			f.logger.Error("failed to fetch page", "url", url, "error", err)
@@ -88,21 +91,17 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 			f.logger.Warn("no URLs are fetched", "url", url)
 			continue
 		}
-		category, err := entities.ExtractCategoryFromURL(url)
-		if err != nil {
-			f.logger.Error("failed to extract category from URL", "url", url, "error", err)
-			continue
-		}
 
 		// Insert fetched URLs to DB
 		// FIXME: duplicate key value violates unique constraint "urls_url_address_key" (SQLSTATE 23505)
 		// TODO: create stored procedure to avoid conflict error
-		if err := f.urlRepo.InsertURLs(ctx, category, totalFetchedURLs); err != nil {
-			f.logger.Error("failed to insert URLs", "error", err)
+		f.logger.Info("insert urls", "category", category.String(), "url_count", len(pageURLs))
+		if err := f.urlRepo.InsertURLs(ctx, category, pageURLs); err != nil {
+			f.logger.Error("failed to insert URLs", "category", category.String(), "error", err)
 		}
 		totalFetchedURLs = append(totalFetchedURLs, pageURLs...)
 	}
-	f.logger.Info("total fetched URLs", "count", len(totalFetchedURLs))
+	f.logger.Info("total fetched URLs", "total_url_count", len(totalFetchedURLs))
 
 	return nil
 }
