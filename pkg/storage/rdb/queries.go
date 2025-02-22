@@ -2,6 +2,7 @@ package rdb
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -59,13 +60,26 @@ func (p *PostgreQueries) GetURLID(ctx context.Context, url string) (int32, error
 	return queries.GetUrlID(ctx, url)
 }
 
-func (p *PostgreQueries) InsertURL(ctx context.Context, url string) (int32, error) {
+func (p *PostgreQueries) InsertURL(
+	ctx context.Context,
+	url string,
+	categoryCode entities.CategoryCode,
+) (int32, error) {
+	if url == "" || categoryCode == "" {
+		return 0, errors.New("url or category code is empty")
+	}
+
 	queries, release, err := p.rdbClient.GetQueries(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer release()
-	return queries.InsertURL(ctx, url)
+
+	params := sqlcgen.InsertURLParams{
+		UrlAddress:   url,
+		CategoryCode: pgtype.Text{String: categoryCode.String(), Valid: categoryCode != ""},
+	}
+	return queries.InsertURL(ctx, params)
 }
 
 func (p *PostgreQueries) InsertURLs(

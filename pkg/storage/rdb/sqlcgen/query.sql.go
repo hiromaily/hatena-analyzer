@@ -273,9 +273,9 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]GetUs
 
 const insertURL = `-- name: InsertURL :one
 WITH insert_result AS (
-	INSERT INTO URLs (url_address)
-	VALUES ($1)
-	ON CONFLICT (url_address) DO NOTHING
+	INSERT INTO URLs (url_address, category_code)
+	VALUES ($1, $2)
+	ON CONFLICT (url_address, category_code) DO NOTHING
 	RETURNING url_id
 )
 SELECT url_id FROM insert_result
@@ -283,21 +283,14 @@ UNION ALL
 SELECT url_id FROM URLs WHERE url_address = $1 LIMIT 1
 `
 
+type InsertURLParams struct {
+	UrlAddress   string
+	CategoryCode pgtype.Text
+}
+
 // @desc: insert url if not existed and return url_id
-// INSERT INTO
-//
-//	URLs (url_address)
-//
-// VALUES
-//
-//	($1)
-//
-// ON CONFLICT (url_address) DO NOTHING
-// RETURNING
-//
-//	url_id;
-func (q *Queries) InsertURL(ctx context.Context, urlAddress string) (int32, error) {
-	row := q.db.QueryRow(ctx, insertURL, urlAddress)
+func (q *Queries) InsertURL(ctx context.Context, arg InsertURLParams) (int32, error) {
+	row := q.db.QueryRow(ctx, insertURL, arg.UrlAddress, arg.CategoryCode)
 	var url_id int32
 	err := row.Scan(&url_id)
 	return url_id, err
