@@ -77,11 +77,7 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 		}
 
 		validURLCount++
-		privateUserRate := float64(
-			summaries[0].Count-summaries[0].UserCount,
-		) / float64(
-			summaries[0].Count,
-		) * 100
+		privateUserRate := entities.PrivateUserRate(summaries[0].Count, summaries[0].UserCount)
 		privateUserRateSum += privateUserRate
 
 		fmt.Println("-------------------------------------------------------------")

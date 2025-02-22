@@ -27,6 +27,7 @@ type fetchBookmarkUsecase struct {
 
 // TODO
 // - add cli parameter: category_code
+// - fetch bookmark concurrently
 
 func NewFetchBookmarkUsecase(
 	logger logger.Logger,
@@ -208,19 +209,19 @@ func (f *fetchBookmarkUsecase) save(
 		return err
 	}
 
-	// Insert URL to PostgreSQL DB
-	// FIXME: must be Upsert
+	// Upsert URL to PostgreSQL DB
 	if entityURL.URLID == 0 { // url comes from environment variable
-		urlID, err := f.bookmarkRepo.InsertURL(
+		urlID, err := f.bookmarkRepo.UpsertURL(
 			ctx,
 			entityURL.URLAddress,
 			entities.Knowledge,
 			bookmark.Count,
 			len(bookmark.Users),
+			entities.PrivateUserRate(bookmark.Count, len(bookmark.Users)),
 		)
 		if err != nil && !rdb.IsNoRows(err) {
 			f.logger.Error(
-				"failed to call bookmarkRepo.InsertURL()",
+				"failed to call bookmarkRepo.UpsertURL()",
 				"url", entityURL.URLAddress,
 				"error", err,
 			)
@@ -229,13 +230,30 @@ func (f *fetchBookmarkUsecase) save(
 		if urlID == 0 {
 			err := errors.New("urlID is 0")
 			f.logger.Error(
-				"failed to call bookmarkRepo.InsertURL()",
+				"failed to call bookmarkRepo.UpsertURL()",
 				"url", entityURL.URLAddress,
 				"error", err,
 			)
 			return err
 		}
 		entityURL.URLID = urlID
+	} else {
+		// update by urlID
+		_, err := f.bookmarkRepo.UpdateURL(
+			ctx,
+			entityURL.URLID,
+			bookmark.Count,
+			len(bookmark.Users),
+			entities.PrivateUserRate(bookmark.Count, len(bookmark.Users)),
+		)
+		if err != nil && !rdb.IsNoRows(err) {
+			f.logger.Error(
+				"failed to call bookmarkRepo.UpdateURL()",
+				"urlID", entityURL.URLID,
+				"error", err,
+			)
+			return err
+		}
 	}
 
 	// Upsert Users related to url on PostgreSQL DB

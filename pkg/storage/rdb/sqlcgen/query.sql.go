@@ -326,6 +326,37 @@ func (q *Queries) InsertUser(ctx context.Context, userName string) (int32, error
 	return user_id, err
 }
 
+const updateURL = `-- name: UpdateURL :execrows
+UPDATE URLs
+SET
+    bookmark_count = $1,
+    named_user_count = $2,
+    private_user_rate = $3
+WHERE
+    url_id = $4
+`
+
+type UpdateURLParams struct {
+	BookmarkCount   pgtype.Int4
+	NamedUserCount  pgtype.Int4
+	PrivateUserRate pgtype.Float8
+	UrlID           int32
+}
+
+// @desc: update url with bookmark_count, named_user_count, private_user_rate
+func (q *Queries) UpdateURL(ctx context.Context, arg UpdateURLParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateURL,
+		arg.BookmarkCount,
+		arg.NamedUserCount,
+		arg.PrivateUserRate,
+		arg.UrlID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const updateUserBookmarkCount = `-- name: UpdateUserBookmarkCount :one
 UPDATE Users
   SET bookmark_count = $1, updated_at = CURRENT_TIMESTAMP
@@ -348,22 +379,24 @@ func (q *Queries) UpdateUserBookmarkCount(ctx context.Context, arg UpdateUserBoo
 }
 
 const upsertURL = `-- name: UpsertURL :one
-INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count) 
-VALUES ($1, $2, $3, $4)
+INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count, private_user_rate) 
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (url_address, category_code) 
 DO UPDATE SET
     bookmark_count = $3,
     named_user_count = $4,
+    private_user_rate = $5,
     is_deleted = FALSE,
     updated_at = EXCLUDED.updated_at 
 RETURNING url_id
 `
 
 type UpsertURLParams struct {
-	UrlAddress     string
-	CategoryCode   pgtype.Text
-	BookmarkCount  pgtype.Int4
-	NamedUserCount pgtype.Int4
+	UrlAddress      string
+	CategoryCode    pgtype.Text
+	BookmarkCount   pgtype.Int4
+	NamedUserCount  pgtype.Int4
+	PrivateUserRate pgtype.Float8
 }
 
 // @desc: insert url if not existed, update url with is_deleted=false if existed
@@ -373,6 +406,7 @@ func (q *Queries) UpsertURL(ctx context.Context, arg UpsertURLParams) (int32, er
 		arg.CategoryCode,
 		arg.BookmarkCount,
 		arg.NamedUserCount,
+		arg.PrivateUserRate,
 	)
 	var url_id int32
 	err := row.Scan(&url_id)

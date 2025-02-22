@@ -85,6 +85,58 @@ func (p *PostgreQueries) InsertURL(
 	return queries.InsertURL(ctx, params)
 }
 
+func (p *PostgreQueries) UpsertURL(
+	ctx context.Context,
+	url string,
+	categoryCode entities.CategoryCode,
+	bmCount, userCount int,
+	privateUserRate float64,
+) (int32, error) {
+	if url == "" || categoryCode == "" {
+		return 0, errors.New("url or category code is empty")
+	}
+
+	queries, release, err := p.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer release()
+
+	params := sqlcgen.UpsertURLParams{
+		UrlAddress:      url,
+		CategoryCode:    pgtype.Text{String: categoryCode.String(), Valid: categoryCode != ""},
+		BookmarkCount:   pgtype.Int4{Int32: int32(bmCount), Valid: true},
+		NamedUserCount:  pgtype.Int4{Int32: int32(userCount), Valid: true},
+		PrivateUserRate: pgtype.Float8{Float64: privateUserRate, Valid: true},
+	}
+	return queries.UpsertURL(ctx, params)
+}
+
+func (p *PostgreQueries) UpdateURL(
+	ctx context.Context,
+	urlID int32,
+	bmCount, userCount int,
+	privateUserRate float64,
+) (int64, error) {
+	if urlID == 0 {
+		return 0, errors.New("urlID is 0")
+	}
+
+	queries, release, err := p.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer release()
+
+	params := sqlcgen.UpdateURLParams{
+		BookmarkCount:   pgtype.Int4{Int32: int32(bmCount), Valid: true},
+		NamedUserCount:  pgtype.Int4{Int32: int32(userCount), Valid: true},
+		PrivateUserRate: pgtype.Float8{Float64: privateUserRate, Valid: true},
+		UrlID:           urlID,
+	}
+	return queries.UpdateURL(ctx, params)
+}
+
 func (p *PostgreQueries) InsertURLs(
 	ctx context.Context,
 	category entities.CategoryCode,

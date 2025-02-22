@@ -91,15 +91,26 @@ SELECT url_id FROM URLs WHERE url_address = $1 AND category_code = $2 LIMIT 1;
 
 -- name: UpsertURL :one
 -- @desc: insert url if not existed, update url with is_deleted=false if existed
-INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count) 
-VALUES ($1, $2, $3, $4)
+INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count, private_user_rate) 
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (url_address, category_code) 
 DO UPDATE SET
     bookmark_count = $3,
     named_user_count = $4,
+    private_user_rate = $5,
     is_deleted = FALSE,
     updated_at = EXCLUDED.updated_at 
 RETURNING url_id;
+
+-- name: UpdateURL :execrows
+-- @desc: update url with bookmark_count, named_user_count, private_user_rate
+UPDATE URLs
+SET
+    bookmark_count = $1,
+    named_user_count = $2,
+    private_user_rate = $3
+WHERE
+    url_id = $4;
 
 -- name: InsertURLs :copyfrom
 -- @desc: insert urls if not existed
