@@ -20,7 +20,7 @@ type Category struct {
 type Url struct {
 	UrlID           int32
 	UrlAddress      string
-	CategoryCode    string
+	CategoryCode    pgtype.Text
 	BookmarkCount   pgtype.Int4
 	NamedUserCount  pgtype.Int4
 	PrivateUserRate pgtype.Float8

@@ -25,6 +25,9 @@ type fetchBookmarkUsecase struct {
 	urls              []string
 }
 
+// TODO
+// - add cli parameter: category_code
+
 func NewFetchBookmarkUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
@@ -33,9 +36,6 @@ func NewFetchBookmarkUsecase(
 	urls []string,
 ) (*fetchBookmarkUsecase, error) {
 	// validation
-	// if len(urls) == 0 {
-	// 	return nil, errors.New("urls is empty")
-	// }
 
 	return &fetchBookmarkUsecase{
 		logger:            logger,
@@ -67,12 +67,17 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 			f.logger.Error("failed to call bookmarkRepo.GetAllURLs()", "error", err)
 			return err
 		}
-		f.urls = entities.FilterURLAddress(entityURLs)
+		// f.urls = entities.FilterURLAddress(entityURLs)
+		// isDBURLs = true
+	} else {
+		for _, url := range f.urls {
+			entityURLs = append(entityURLs, entities.RDBURL{URLAddress: url})
+		}
 	}
 
-	for _, url := range f.urls {
-		// load page
-		existingBookmark, err := f.load(ctx, url)
+	for _, entityURL := range entityURLs {
+		// load existing bookmark data from DB
+		existingBookmark, err := f.load(ctx, entityURL.URLAddress)
 		if err != nil {
 			continue
 		}
@@ -86,13 +91,13 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 			}
 		}
 
-		// retrieve latest data from web
-		newBookmark, err := f.fetch(ctx, url)
+		// retrieve latest data from URL
+		newBookmark, err := f.fetch(ctx, entityURL.URLAddress)
 		if err != nil {
 			continue
 		}
 
-		// update
+		// update existingBookmark to save
 		existingBookmark.Title = newBookmark.Title
 		existingBookmark.Count = newBookmark.Count
 		existingBookmark.Timestamp = newBookmark.Timestamp
@@ -105,14 +110,14 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 			}
 		}
 		f.logger.Info("bookmark entity will be stored",
-			"url", url,
+			"url", entityURL.URLAddress,
 			"newBookmark.Title", existingBookmark.Title,
 			"newBookmark.Count", existingBookmark.Count,
 			"newBookmark.User.Length", len(existingBookmark.Users),
 		)
 
 		// save data
-		err = f.save(ctx, url, existingBookmark)
+		err = f.save(ctx, &entityURL, existingBookmark)
 		if err != nil {
 			continue
 		}
@@ -124,21 +129,22 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 	return nil
 }
 
+// load existing bookmark data from DB
 func (f *fetchBookmarkUsecase) load(ctx context.Context, url string) (*entities.Bookmark, error) {
-	// load bookmark summary
-	bookmarkSummary, err := f.bookmarkRepo.ReadEntitySummary(ctx, url)
-	if err != nil {
-		f.logger.Error("failed to call bookmarkRepo.ReadEntitySummary()", "url", url, "error", err)
-		return nil, err
-	}
-	f.logger.Debug("bookmark summary loaded",
-		"url", url,
-		"bookmarkSummary.Title", bookmarkSummary.Title,
-		"bookmarkSummary.Count", bookmarkSummary.Count,
-		"bookmarkSummary.UserCount", bookmarkSummary.UserCount,
-	)
+	// load bookmark summary from InfluxDB
+	// bookmarkSummary, err := f.bookmarkRepo.ReadEntitySummary(ctx, url)
+	// if err != nil {
+	// 	f.logger.Error("failed to call bookmarkRepo.ReadEntitySummary()", "url", url, "error", err)
+	// 	return nil, err
+	// }
+	// f.logger.Debug("bookmark summary loaded",
+	// 	"url", url,
+	// 	"bookmarkSummary.Title", bookmarkSummary.Title,
+	// 	"bookmarkSummary.Count", bookmarkSummary.Count,
+	// 	"bookmarkSummary.UserCount", bookmarkSummary.UserCount,
+	// )
 
-	// load bookmark content by URL
+	// load bookmark content by URL from MongoDB
 	existingBookmark, err := f.bookmarkRepo.ReadEntity(ctx, url)
 	if err != nil {
 		f.logger.Error("failed to call bookmarkRepo.ReadEntity()", "url", url, "error", err)
@@ -146,18 +152,19 @@ func (f *fetchBookmarkUsecase) load(ctx context.Context, url string) (*entities.
 	}
 
 	if existingBookmark == nil {
-		f.logger.Debug("entity not found on DB", "url", url)
+		f.logger.Debug("entity not found on MongoDB", "url", url)
 		// initialize entities.Bookmark
 		existingBookmark = &entities.Bookmark{}
 		existingBookmark.Users = make(map[string]entities.BookmarkUser)
+	} else {
+		f.logger.Info("bookmark entity loaded",
+			"url", url,
+			"existingBookmark.Title", existingBookmark.Title,
+			"existingBookmark.Count", existingBookmark.Count,
+			"existingBookmark.User.Length", len(existingBookmark.Users),
+		)
 	}
 
-	f.logger.Info("bookmark entity loaded",
-		"url", url,
-		"existingBookmark.Title", existingBookmark.Title,
-		"existingBookmark.Count", existingBookmark.Count,
-		"existingBookmark.User.Length", len(existingBookmark.Users),
-	)
 	return existingBookmark, nil
 }
 
@@ -178,32 +185,53 @@ func (f *fetchBookmarkUsecase) fetch(ctx context.Context, url string) (*entities
 	return newBookmark, nil
 }
 
-func (f *fetchBookmarkUsecase) save(ctx context.Context, url string, bookmark *entities.Bookmark) error {
+func (f *fetchBookmarkUsecase) save(
+	ctx context.Context,
+	entityURL *entities.RDBURL,
+	bookmark *entities.Bookmark,
+) error {
 	// InfluxDB
-	err := f.bookmarkRepo.WriteEntitySummary(ctx, url, bookmark)
+	err := f.bookmarkRepo.WriteEntitySummary(ctx, entityURL.URLAddress, bookmark)
 	if err != nil {
-		f.logger.Error("failed to call bookmarkRepo.WriteEntitySummary()", "url", url, "error", err)
+		f.logger.Error(
+			"failed to call bookmarkRepo.WriteEntitySummary()",
+			"url", entityURL.URLAddress,
+			"error", err,
+		)
 		return err
 	}
 
 	// MongoDB
-	err = f.bookmarkRepo.WriteEntity(ctx, url, bookmark)
+	err = f.bookmarkRepo.WriteEntity(ctx, entityURL.URLAddress, bookmark)
 	if err != nil {
-		f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", url, "error", err)
+		f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", entityURL.URLAddress, "error", err)
 		return err
 	}
 
-	urlID, err := f.bookmarkRepo.InsertURL(ctx, url)
-	if err != nil && !rdb.IsNoRows(err) {
-		f.logger.Error("failed to call bookmarkRepo.InsertURL()", "url", url, "error", err)
-		return err
-	}
-	if urlID == 0 {
-		err := errors.New("urlID is 0")
-		f.logger.Error("failed to call bookmarkRepo.InsertURL()", "url", url, "error", err)
-		return err
+	// Insert URL to PostgreSQL DB
+	if entityURL.URLID == 0 { // url comes from environment variable
+		urlID, err := f.bookmarkRepo.InsertURL(ctx, entityURL.URLAddress)
+		if err != nil && !rdb.IsNoRows(err) {
+			f.logger.Error(
+				"failed to call bookmarkRepo.InsertURL()",
+				"url", entityURL.URLAddress,
+				"error", err,
+			)
+			return err
+		}
+		if urlID == 0 {
+			err := errors.New("urlID is 0")
+			f.logger.Error(
+				"failed to call bookmarkRepo.InsertURL()",
+				"url", entityURL.URLAddress,
+				"error", err,
+			)
+			return err
+		}
+		entityURL.URLID = urlID
 	}
 
+	// Upsert Users related to url on PostgreSQL DB
 	for _, users := range bookmark.Users {
 		// Users
 		userID, err := f.bookmarkRepo.UpsertUser(ctx, users.Name)
@@ -211,20 +239,20 @@ func (f *fetchBookmarkUsecase) save(ctx context.Context, url string, bookmark *e
 			f.logger.Warn("failed to call bookmarkRepo.UpsertUser()", "userName", users.Name, "error", err)
 		}
 		// UserURLs
-		err = f.bookmarkRepo.UpsertUserURLs(ctx, userID, urlID)
+		err = f.bookmarkRepo.UpsertUserURLs(ctx, userID, entityURL.URLID)
 		if err != nil {
 			// FIXED: ERROR: insert or update on table "userurls" violates foreign key
 			// constraint "userurls_url_id_fkey" (SQLSTATE 23503)
 			f.logger.Warn(
 				"failed to call bookmarkRepo.UpsertUserURLs()",
 				"userID", userID,
-				"urlID", urlID,
+				"urlID", entityURL.URLID,
 				"error", err,
 			)
 		}
 	}
 
-	f.logger.Info("bookmark data saved", "url", url)
+	f.logger.Info("bookmark data saved", "url", entityURL.URLAddress)
 	return nil
 }
 

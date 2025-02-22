@@ -305,7 +305,7 @@ func (q *Queries) InsertURL(ctx context.Context, urlAddress string) (int32, erro
 
 type InsertURLsParams struct {
 	UrlAddress   string
-	CategoryCode string
+	CategoryCode pgtype.Text
 }
 
 const insertUser = `-- name: InsertUser :one

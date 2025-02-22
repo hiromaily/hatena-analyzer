@@ -283,11 +283,23 @@ func (r *registry) newLogger() logger.Logger {
 		if r.envConf.IsDebug {
 			logLevel = slog.LevelDebug
 		}
-		r.logger = logger.NewSlogLogger(
-			logLevel,
-			r.appCode.String(),
-			r.commitID,
-		)
+		switch r.envConf.Logger {
+		case "console":
+			// console logger
+			r.logger = logger.NewSlogConsoleLogger(
+				logLevel,
+			)
+		case "json":
+			// JSON logger
+			r.logger = logger.NewSlogJSONLogger(
+				logLevel,
+				r.appCode.String(),
+				r.commitID,
+			)
+		default:
+			// default
+			r.logger = logger.NewNoopLogger()
+		}
 		// r.logger.Info("Logger initialized", "logLevel", logLevel.String())
 	}
 	return r.logger

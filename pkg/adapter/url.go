@@ -1,6 +1,8 @@
 package adapter
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
 )
@@ -18,10 +20,14 @@ func DBURLsToEntityModel(urls []sqlcgen.GetAllURLsRow) []entities.RDBURL {
 
 func CreateInsertURLsParams(category string, urls []string) []sqlcgen.InsertURLsParams {
 	var params []sqlcgen.InsertURLsParams
+	pgtextCategory := pgtype.Text{
+		String: category,
+		Valid:  category != "",
+	}
 	for _, url := range urls {
 		params = append(params, sqlcgen.InsertURLsParams{
 			UrlAddress:   url,
-			CategoryCode: category,
+			CategoryCode: pgtextCategory,
 		})
 	}
 	return params

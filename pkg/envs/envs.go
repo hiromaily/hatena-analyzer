@@ -3,6 +3,8 @@ package envs
 type Config struct {
 	IsDebug bool `env:"IS_DEBUG"`
 	// URLS    []string `env:"URLS"`
+	// Logger
+	Logger string `env:"LOGGER,required"` // json, console, none
 	// Tracer
 	Tracer            string `env:"TRACER,required"` // jaeger, datadog, none
 	TracerServiceName string `env:"TRACER_SERVICE_NAME,required"`
