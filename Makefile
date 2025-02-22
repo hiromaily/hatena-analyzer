@@ -80,6 +80,12 @@ fetch-user-bm-count:
 view-timeseries:
 	go run ./cmd/fake-detector/ view-time-series
 
+# View details of bookmarked entity
+# urls [env: URLS] are required to run 
+.PHONY: view-bookmark-details
+view-bookmark-details:
+	go run ./cmd/fake-detector/ view-bookmark-details
+
 # View summary of bookmarked entity
 .PHONY: view-summary
 view-summary:

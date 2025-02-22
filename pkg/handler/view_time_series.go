@@ -26,12 +26,12 @@ func NewViewTimeSeriesCLIHandler(
 	}
 }
 
-func (s *viewTimeSeriesCLIHandler) Handler(ctx context.Context) error {
-	s.logger.Info("viewTimeSeriesCLIHandler Handler")
+func (v *viewTimeSeriesCLIHandler) Handler(ctx context.Context) error {
+	v.logger.Info("viewTimeSeriesCLIHandler Handler")
 
-	err := s.usecase.Execute(ctx)
+	err := v.usecase.Execute(ctx)
 	if err != nil {
-		s.logger.Error("failed to view bookmark time series", "error", err)
+		v.logger.Error("failed to view bookmark time series", "error", err)
 	}
 	return err
 }

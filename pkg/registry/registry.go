@@ -35,11 +35,12 @@ type registry struct {
 	targetHandler handler.Handler
 
 	// repositories
-	bookmarkRepo   repository.BookmarkRepositorier
-	summaryRepo    repository.SummaryRepositorier
-	timeSeriesRepo repository.TimeSeriesRepositorier
-	userRepo       repository.UserRepositorier
-	urlRepo        repository.URLRepositorier
+	bookmarkRepo        repository.BookmarkRepositorier
+	summaryRepo         repository.SummaryRepositorier
+	timeSeriesRepo      repository.TimeSeriesRepositorier
+	bookmarkDetailsRepo repository.BookmarkDetailsRepositorier
+	userRepo            repository.UserRepositorier
+	urlRepo             repository.URLRepositorier
 	// db clients
 	postgresQueries *rdb.PostgreQueries
 	influxDBQueries *influxdb.InfluxDBQueries
@@ -100,6 +101,8 @@ func (r *registry) targetFunc() {
 		r.targetHandler = r.newFetchUserBookmarkCountHandler()
 	case r.appCode == app.AppCodeViewTimeSeries:
 		r.targetHandler = r.newViewTimeSeriesHanlder()
+	case r.appCode == app.AppCodeViewBookmarkDetails:
+		r.targetHandler = r.newViewBookmarkDetailsHanlder()
 	case r.appCode == app.AppCodeViewSummary:
 		r.targetHandler = r.newViewSummaryHanlder()
 	}
@@ -121,16 +124,20 @@ func (r *registry) newFetchBookmarkHandler() handler.Handler {
 	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase())
 }
 
+func (r *registry) newFetchUserBookmarkCountHandler() handler.Handler {
+	return handler.NewFetchUserBookmarkCountCLIHandler(r.newLogger(), r.newFetchUserBookmarkCountUsecase())
+}
+
 func (r *registry) newViewTimeSeriesHanlder() handler.Handler {
 	return handler.NewViewTimeSeriesCLIHandler(r.newLogger(), r.newViewTimeSeriesUsecase())
 }
 
-func (r *registry) newViewSummaryHanlder() handler.Handler {
-	return handler.NewViewSummaryCLIHandler(r.newLogger(), r.newViewSummaryUsecase())
+func (r *registry) newViewBookmarkDetailsHanlder() handler.Handler {
+	return handler.NewViewBookmarkDetailsCLIHandler(r.newLogger(), r.newViewBookmarkDetailsUsecase())
 }
 
-func (r *registry) newFetchUserBookmarkCountHandler() handler.Handler {
-	return handler.NewFetchUserBookmarkCountCLIHandler(r.newLogger(), r.newFetchUserBookmarkCountUsecase())
+func (r *registry) newViewSummaryHanlder() handler.Handler {
+	return handler.NewViewSummaryCLIHandler(r.newLogger(), r.newViewSummaryUsecase())
 }
 
 ///
@@ -172,6 +179,19 @@ func (r *registry) newViewTimeSeriesUsecase() usecase.ViewTimeSeriesUsecaser {
 		r.newLogger(),
 		r.newTracer(r.appCode.String()),
 		r.newTimeSeriesRepository(),
+		r.urls,
+	)
+	if err != nil {
+		panic(err)
+	}
+	return usecase
+}
+
+func (r *registry) newViewBookmarkDetailsUsecase() usecase.ViewBookmarkDetailsUsecaser {
+	usecase, err := usecase.NewViewBookmarkDetailsUsecase(
+		r.newLogger(),
+		r.newTracer(r.appCode.String()),
+		r.newBookmarkDetailsRepository(),
 		r.urls,
 	)
 	if err != nil {
@@ -232,6 +252,16 @@ func (r *registry) newTimeSeriesRepository() repository.TimeSeriesRepositorier {
 		)
 	}
 	return r.timeSeriesRepo
+}
+
+func (r *registry) newBookmarkDetailsRepository() repository.BookmarkDetailsRepositorier {
+	if r.bookmarkDetailsRepo == nil {
+		r.bookmarkDetailsRepo = repository.NewBookmarkDetailsRepository(
+			r.newLogger(),
+			r.newPostgresQueries(),
+		)
+	}
+	return r.bookmarkDetailsRepo
 }
 
 func (r *registry) newSummaryRepository() repository.SummaryRepositorier {

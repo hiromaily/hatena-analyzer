@@ -43,25 +43,25 @@ func NewViewTimeSeriesUsecase(
 	}, nil
 }
 
-func (s *timeSeriesUsecase) Execute(ctx context.Context) error {
+func (t *timeSeriesUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
-	defer s.timeSeriesRepo.Close(ctx)
+	defer t.timeSeriesRepo.Close(ctx)
 
-	_, span := s.tracer.NewSpan(ctx, "timeSeriesUsecase:Execute()")
+	_, span := t.tracer.NewSpan(ctx, "timeSeriesUsecase:Execute()")
 	defer func() {
 		span.End()
-		s.tracer.Close(ctx)
+		t.tracer.Close(ctx)
 	}()
 
-	for _, url := range s.urls {
+	for _, url := range t.urls {
 		// get summaries from InfluxDB
-		summaries, err := s.timeSeriesRepo.ReadEntitySummaries(ctx, url)
+		summaries, err := t.timeSeriesRepo.ReadEntitySummaries(ctx, url)
 		if err != nil {
-			s.logger.Error("failed to call summaryRepo.ReadEntitySummaries()", "url", url, "error", err)
+			t.logger.Error("failed to call timeSeriesRepo.ReadEntitySummaries()", "url", url, "error", err)
 			continue
 		}
 		if len(summaries) == 0 {
-			s.logger.Warn("no data", "url", url)
+			t.logger.Warn("no data", "url", url)
 			continue
 		}
 

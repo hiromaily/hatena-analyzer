@@ -26,6 +26,8 @@ type Args struct {
 	FetchUserBookmarkCountCommand *SubCommand `arg:"subcommand:fetch-user-bm-count"`
 	// view time series of bookmark
 	ViewTimeSeriesCommand *SubCommand `arg:"subcommand:view-time-series"`
+	// view bookmark details
+	ViewBookmarkDetailsCommand *SubCommand `arg:"subcommand:view-bookmark-details"`
 	// view bookmark summary
 	ViewSummaryCommand *SubCommand `arg:"subcommand:view-summary"`
 }
@@ -46,6 +48,8 @@ func getAppCode(args *Args) app.AppCode {
 		return app.AppCodeFetchUserBookmarkCount
 	case args.ViewTimeSeriesCommand != nil:
 		return app.AppCodeViewTimeSeries
+	case args.ViewBookmarkDetailsCommand != nil:
+		return app.AppCodeViewBookmarkDetails
 	case args.ViewSummaryCommand != nil:
 		return app.AppCodeViewSummary
 	}

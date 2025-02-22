@@ -26,12 +26,12 @@ func NewViewSummaryCLIHandler(
 	}
 }
 
-func (s *viewSummaryCLIHandler) Handler(ctx context.Context) error {
-	s.logger.Info("viewSummaryCLIHandler Handler")
+func (v *viewSummaryCLIHandler) Handler(ctx context.Context) error {
+	v.logger.Info("viewSummaryCLIHandler Handler")
 
-	err := s.usecase.Execute(ctx)
+	err := v.usecase.Execute(ctx)
 	if err != nil {
-		s.logger.Error("failed to view bookmark summary data", "error", err)
+		v.logger.Error("failed to view bookmark summary data", "error", err)
 	}
 	return err
 }

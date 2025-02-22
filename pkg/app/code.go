@@ -8,6 +8,7 @@ const (
 	AppCodeFetchBookmarkEntities  = AppCode("FetchBookmarkEntities")
 	AppCodeFetchUserBookmarkCount = AppCode("FetchUserBookmarkCount")
 	AppCodeViewTimeSeries         = AppCode("ViewTimeSeries")
+	AppCodeViewBookmarkDetails    = AppCode("ViewBookmarkDetails")
 	AppCodeViewSummary            = AppCode("ViewSummary")
 
 	AppCodeWeb = AppCode("WebServer")
