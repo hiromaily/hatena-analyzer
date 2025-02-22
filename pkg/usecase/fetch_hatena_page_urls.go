@@ -27,6 +27,7 @@ type fetchHatenaPageURLsUsecase struct {
 // - add cli parameter: category_code
 // - fetch urls concurrently
 // - add stored procedure to avoid conflict error
+//   - fix: duplicate key value violates unique constraint "urls_url_address_key" (SQLSTATE 23505)
 // - add test
 
 func NewFetchHatenaPageURLsUsecase(

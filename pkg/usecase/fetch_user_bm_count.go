@@ -102,7 +102,7 @@ func (f *fetchUserBookmarkCountUsecase) concurrentExecuter(ctx context.Context, 
 				sem.Release(1)
 			}()
 
-			// 2-1. get user's bookmark count
+			// 1. get user's bookmark count
 			bmCount, err := f.userBMCountFetcher.Fetch(ctx, userName)
 			if err != nil {
 				f.logger.Error("failed to get user bookmark count", "user_name", userName, "error", err)
@@ -110,7 +110,7 @@ func (f *fetchUserBookmarkCountUsecase) concurrentExecuter(ctx context.Context, 
 			}
 			// s.logger.Debug("user info", "user_name", userName, "bm_count", bmCount)
 
-			// 2-2. save data to DB
+			// 2. save data to DB
 			if err := f.userRepo.UpdateUserBookmarkCount(ctx, userName, bmCount); err != nil {
 				//FIXED: failed to deallocate cached statement(s): conn busy
 				f.logger.Error("failed to update user bookmark count", "user_name", userName, "error", err)

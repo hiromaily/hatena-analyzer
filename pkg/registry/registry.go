@@ -35,10 +35,11 @@ type registry struct {
 	targetHandler handler.Handler
 
 	// repositories
-	bookmarkRepo repository.BookmarkRepositorier
-	summaryRepo  repository.SummaryRepositorier
-	userRepo     repository.UserRepositorier
-	urlRepo      repository.URLRepositorier
+	bookmarkRepo   repository.BookmarkRepositorier
+	summaryRepo    repository.SummaryRepositorier
+	timeSeriesRepo repository.TimeSeriesRepositorier
+	userRepo       repository.UserRepositorier
+	urlRepo        repository.URLRepositorier
 	// db clients
 	postgresQueries *rdb.PostgreQueries
 	influxDBQueries *influxdb.InfluxDBQueries
@@ -97,6 +98,8 @@ func (r *registry) targetFunc() {
 		r.targetHandler = r.newFetchBookmarkHandler()
 	case r.appCode == app.AppCodeFetchUserBookmarkCount:
 		r.targetHandler = r.newFetchUserBookmarkCountHandler()
+	case r.appCode == app.AppCodeViewTimeSeries:
+		r.targetHandler = r.newViewTimeSeriesHanlder()
 	case r.appCode == app.AppCodeViewSummary:
 		r.targetHandler = r.newViewSummaryHanlder()
 	}
@@ -116,6 +119,10 @@ func (r *registry) newFetchHatenaPageURLsHandler() handler.Handler {
 
 func (r *registry) newFetchBookmarkHandler() handler.Handler {
 	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase())
+}
+
+func (r *registry) newViewTimeSeriesHanlder() handler.Handler {
+	return handler.NewViewTimeSeriesCLIHandler(r.newLogger(), r.newViewTimeSeriesUsecase())
 }
 
 func (r *registry) newViewSummaryHanlder() handler.Handler {
@@ -152,6 +159,19 @@ func (r *registry) newFetchBookmarkUsecase() usecase.FetchBookmarkUsecaser {
 		r.newTracer(r.appCode.String()),
 		r.newBookmarkRepository(),
 		r.newBookmarkFetcher(),
+		r.urls,
+	)
+	if err != nil {
+		panic(err)
+	}
+	return usecase
+}
+
+func (r *registry) newViewTimeSeriesUsecase() usecase.ViewTimeSeriesUsecaser {
+	usecase, err := usecase.NewViewTimeSeriesUsecase(
+		r.newLogger(),
+		r.newTracer(r.appCode.String()),
+		r.newTimeSeriesRepository(),
 		r.urls,
 	)
 	if err != nil {
@@ -202,6 +222,16 @@ func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
 		)
 	}
 	return r.bookmarkRepo
+}
+
+func (r *registry) newTimeSeriesRepository() repository.TimeSeriesRepositorier {
+	if r.timeSeriesRepo == nil {
+		r.timeSeriesRepo = repository.NewTimeSeriesRepository(
+			r.newLogger(),
+			r.newInfluxDBQueries(),
+		)
+	}
+	return r.timeSeriesRepo
 }
 
 func (r *registry) newSummaryRepository() repository.SummaryRepositorier {

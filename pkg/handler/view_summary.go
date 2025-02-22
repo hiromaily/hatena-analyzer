@@ -8,23 +8,26 @@ import (
 )
 
 //
-// summaryCLIHandler
+// viewSummaryCLIHandler
 //
 
-type summaryCLIHandler struct {
+type viewSummaryCLIHandler struct {
 	logger  logger.Logger
 	usecase usecase.ViewSummaryUsecaser
 }
 
-func NewViewSummaryCLIHandler(logger logger.Logger, usecase usecase.ViewSummaryUsecaser) *summaryCLIHandler {
-	return &summaryCLIHandler{
+func NewViewSummaryCLIHandler(
+	logger logger.Logger,
+	usecase usecase.ViewSummaryUsecaser,
+) *viewSummaryCLIHandler {
+	return &viewSummaryCLIHandler{
 		logger:  logger,
 		usecase: usecase,
 	}
 }
 
-func (s *summaryCLIHandler) Handler(ctx context.Context) error {
-	s.logger.Info("summaryCLIHandler Handler")
+func (s *viewSummaryCLIHandler) Handler(ctx context.Context) error {
+	s.logger.Info("viewSummaryCLIHandler Handler")
 
 	err := s.usecase.Execute(ctx)
 	if err != nil {

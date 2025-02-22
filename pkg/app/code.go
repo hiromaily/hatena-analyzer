@@ -7,6 +7,7 @@ const (
 	AppCodeFetchHatenaPageURLs    = AppCode("FetchHatenaPageURLs")
 	AppCodeFetchBookmarkEntities  = AppCode("FetchBookmarkEntities")
 	AppCodeFetchUserBookmarkCount = AppCode("FetchUserBookmarkCount")
+	AppCodeViewTimeSeries         = AppCode("ViewTimeSeries")
 	AppCodeViewSummary            = AppCode("ViewSummary")
 
 	AppCodeWeb = AppCode("WebServer")
