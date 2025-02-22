@@ -61,13 +61,30 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 	// 	b.urls = entities.FilterURLAddress(entityURLs)
 	// }
 
-	for _, url := range b.urls {
-		// get url info from DB
+	// get url info from DB
+	urlModels, err := b.bookmarkDetailsRepo.GetURLsByURLAddresses(ctx, b.urls)
+	if err != nil {
+		b.logger.Error(
+			"failed to call bookmarkDetailsRepo.GetURLsByURLAddresses()",
+			"url_count",
+			len(b.urls),
+			"error",
+			err,
+		)
+		return err
+	}
 
+	for _, urlModel := range urlModels {
 		// get user by URL info from DB
-		users, err := b.bookmarkDetailsRepo.GetUsersByURL(ctx, url)
+		users, err := b.bookmarkDetailsRepo.GetUsersByURL(ctx, urlModel.Address)
 		if err != nil {
-			b.logger.Error("failed to call bookmarkDetailsRepo.GetUsersByURL()", "url", url, "error", err)
+			b.logger.Error(
+				"failed to call bookmarkDetailsRepo.GetUsersByURL()",
+				"url",
+				urlModel.Address,
+				"error",
+				err,
+			)
 			continue
 		}
 		var count10, count100, count1000, count10000, countOver int
@@ -87,8 +104,11 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 		}
 		// calculate average
 		// less 10 user must be suspicious
-		newUserRate := float64(count10) / float64(9999) * 100
+		newUserRate := float64(count10) / float64(urlModel.NamedUserCount) * 100
 
+		fmt.Println("----------------------------------------------------------------------")
+		// TODO: add title into url table
+		fmt.Printf(" Title: %s,\n URL: %s\n", "dummy", urlModel.Address)
 		fmt.Printf(" User's bookmark count / number of users whose bookmark count \n")
 		fmt.Printf("  less 10:      %5d\n", count10)
 		fmt.Printf("  less 100:     %5d\n", count100)
