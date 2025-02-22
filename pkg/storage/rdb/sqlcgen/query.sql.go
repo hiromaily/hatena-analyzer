@@ -273,24 +273,31 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]GetUs
 
 const insertURL = `-- name: InsertURL :one
 WITH insert_result AS (
-	INSERT INTO URLs (url_address, category_code)
-	VALUES ($1, $2)
+	INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count)
+	VALUES ($1, $2, $3, $4)
 	ON CONFLICT (url_address, category_code) DO NOTHING
 	RETURNING url_id
 )
 SELECT url_id FROM insert_result
 UNION ALL
-SELECT url_id FROM URLs WHERE url_address = $1 LIMIT 1
+SELECT url_id FROM URLs WHERE url_address = $1 AND category_code = $2 LIMIT 1
 `
 
 type InsertURLParams struct {
-	UrlAddress   string
-	CategoryCode pgtype.Text
+	UrlAddress     string
+	CategoryCode   pgtype.Text
+	BookmarkCount  pgtype.Int4
+	NamedUserCount pgtype.Int4
 }
 
 // @desc: insert url if not existed and return url_id
 func (q *Queries) InsertURL(ctx context.Context, arg InsertURLParams) (int32, error) {
-	row := q.db.QueryRow(ctx, insertURL, arg.UrlAddress, arg.CategoryCode)
+	row := q.db.QueryRow(ctx, insertURL,
+		arg.UrlAddress,
+		arg.CategoryCode,
+		arg.BookmarkCount,
+		arg.NamedUserCount,
+	)
 	var url_id int32
 	err := row.Scan(&url_id)
 	return url_id, err
@@ -338,6 +345,38 @@ func (q *Queries) UpdateUserBookmarkCount(ctx context.Context, arg UpdateUserBoo
 	var user_id int32
 	err := row.Scan(&user_id)
 	return user_id, err
+}
+
+const upsertURL = `-- name: UpsertURL :one
+INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count) 
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (url_address, category_code) 
+DO UPDATE SET
+    bookmark_count = $3,
+    named_user_count = $4,
+    is_deleted = FALSE,
+    updated_at = EXCLUDED.updated_at 
+RETURNING url_id
+`
+
+type UpsertURLParams struct {
+	UrlAddress     string
+	CategoryCode   pgtype.Text
+	BookmarkCount  pgtype.Int4
+	NamedUserCount pgtype.Int4
+}
+
+// @desc: insert url if not existed, update url with is_deleted=false if existed
+func (q *Queries) UpsertURL(ctx context.Context, arg UpsertURLParams) (int32, error) {
+	row := q.db.QueryRow(ctx, upsertURL,
+		arg.UrlAddress,
+		arg.CategoryCode,
+		arg.BookmarkCount,
+		arg.NamedUserCount,
+	)
+	var url_id int32
+	err := row.Scan(&url_id)
+	return url_id, err
 }
 
 const upsertUser = `-- name: UpsertUser :one

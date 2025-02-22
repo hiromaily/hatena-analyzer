@@ -209,8 +209,15 @@ func (f *fetchBookmarkUsecase) save(
 	}
 
 	// Insert URL to PostgreSQL DB
+	// FIXME: must be Upsert
 	if entityURL.URLID == 0 { // url comes from environment variable
-		urlID, err := f.bookmarkRepo.InsertURL(ctx, entityURL.URLAddress, entities.Knowledge)
+		urlID, err := f.bookmarkRepo.InsertURL(
+			ctx,
+			entityURL.URLAddress,
+			entities.Knowledge,
+			bookmark.Count,
+			len(bookmark.Users),
+		)
 		if err != nil && !rdb.IsNoRows(err) {
 			f.logger.Error(
 				"failed to call bookmarkRepo.InsertURL()",

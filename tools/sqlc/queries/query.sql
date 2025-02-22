@@ -80,14 +80,26 @@ RETURNING
 -- name: InsertURL :one
 -- @desc: insert url if not existed and return url_id
 WITH insert_result AS (
-	INSERT INTO URLs (url_address, category_code)
-	VALUES ($1, $2)
+	INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count)
+	VALUES ($1, $2, $3, $4)
 	ON CONFLICT (url_address, category_code) DO NOTHING
 	RETURNING url_id
 )
 SELECT url_id FROM insert_result
 UNION ALL
-SELECT url_id FROM URLs WHERE url_address = $1 LIMIT 1;
+SELECT url_id FROM URLs WHERE url_address = $1 AND category_code = $2 LIMIT 1;
+
+-- name: UpsertURL :one
+-- @desc: insert url if not existed, update url with is_deleted=false if existed
+INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count) 
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (url_address, category_code) 
+DO UPDATE SET
+    bookmark_count = $3,
+    named_user_count = $4,
+    is_deleted = FALSE,
+    updated_at = EXCLUDED.updated_at 
+RETURNING url_id;
 
 -- name: InsertURLs :copyfrom
 -- @desc: insert urls if not existed

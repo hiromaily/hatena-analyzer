@@ -64,6 +64,7 @@ func (p *PostgreQueries) InsertURL(
 	ctx context.Context,
 	url string,
 	categoryCode entities.CategoryCode,
+	bmCount, userCount int,
 ) (int32, error) {
 	if url == "" || categoryCode == "" {
 		return 0, errors.New("url or category code is empty")
@@ -76,8 +77,10 @@ func (p *PostgreQueries) InsertURL(
 	defer release()
 
 	params := sqlcgen.InsertURLParams{
-		UrlAddress:   url,
-		CategoryCode: pgtype.Text{String: categoryCode.String(), Valid: categoryCode != ""},
+		UrlAddress:     url,
+		CategoryCode:   pgtype.Text{String: categoryCode.String(), Valid: categoryCode != ""},
+		BookmarkCount:  pgtype.Int4{Int32: int32(bmCount), Valid: true},
+		NamedUserCount: pgtype.Int4{Int32: int32(userCount), Valid: true},
 	}
 	return queries.InsertURL(ctx, params)
 }

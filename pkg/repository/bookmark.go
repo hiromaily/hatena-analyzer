@@ -15,7 +15,12 @@ type BookmarkRepositorier interface {
 	// PostgreSQL
 	GetAllURLs(ctx context.Context) ([]entities.RDBURL, error)
 	GetURLID(ctx context.Context, url string) (int32, error)
-	InsertURL(ctx context.Context, url string, categoryCode entities.CategoryCode) (int32, error)
+	InsertURL(
+		ctx context.Context,
+		url string,
+		categoryCode entities.CategoryCode,
+		bmCount, userCount int,
+	) (int32, error)
 	// InsertUser(ctx context.Context, userName string) error
 	UpsertUser(ctx context.Context, userName string) (int32, error)
 	UpsertUserURLs(ctx context.Context, userID, urlID int32) error
@@ -72,8 +77,9 @@ func (b *bookmarkRepository) InsertURL(
 	ctx context.Context,
 	url string,
 	categoryCode entities.CategoryCode,
+	bmCount, userCount int,
 ) (int32, error) {
-	return b.postgreQueries.InsertURL(ctx, url, categoryCode)
+	return b.postgreQueries.InsertURL(ctx, url, categoryCode, bmCount, userCount)
 }
 
 // func (b *bookmarkRepository) InsertUser(ctx context.Context, userName string) error {
