@@ -7,12 +7,27 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
 )
 
-func DBURLsToEntityModel(urls []sqlcgen.GetAllURLsRow) []entities.RDBURL {
-	var urlModels []entities.RDBURL
+func URLIDAddressesToEntityModel(urls []sqlcgen.GetAllURLsRow) []entities.URLIDAddress {
+	var urlModels []entities.URLIDAddress
 	for _, url := range urls {
-		urlModels = append(urlModels, entities.RDBURL{
-			URLID:      url.UrlID,
-			URLAddress: url.UrlAddress,
+		urlModels = append(urlModels, entities.URLIDAddress{
+			ID:      url.UrlID,
+			Address: url.UrlAddress,
+		})
+	}
+	return urlModels
+}
+
+func URLsByURLAddressesToEntityModel(urls []sqlcgen.GetURLsByURLAddressesRow) []entities.URL {
+	var urlModels []entities.URL
+	for _, url := range urls {
+		urlModels = append(urlModels, entities.URL{
+			ID:              url.UrlID,
+			Address:         url.UrlAddress,
+			CategoryCode:    entities.CategoryCode(url.CategoryCode.String),
+			BookmarkCount:   url.BookmarkCount.Int32,
+			NamedUserCount:  url.NamedUserCount.Int32,
+			PrivateUserRate: url.PrivateUserRate.Float64,
 		})
 	}
 	return urlModels

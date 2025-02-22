@@ -35,7 +35,23 @@ func (p *PostgreQueries) Close(ctx context.Context) error {
 // urls
 //
 
-func (p *PostgreQueries) GetAllURLs(ctx context.Context) ([]entities.RDBURL, error) {
+func (p *PostgreQueries) GetURLsByURLAddresses(ctx context.Context, urls []string) ([]entities.URL, error) {
+	queries, release, err := p.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	urlsRow, err := queries.GetURLsByURLAddresses(ctx, urls)
+	if err != nil {
+		return nil, err
+	}
+	// convert to entity models
+	// []sqlcgen.GetURLsByURLAddressesRow
+	urlModels := adapter.URLsByURLAddressesToEntityModel(urlsRow)
+	return urlModels, nil
+}
+
+func (p *PostgreQueries) GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error) {
 	queries, release, err := p.rdbClient.GetQueries(ctx)
 	if err != nil {
 		return nil, err
@@ -47,7 +63,7 @@ func (p *PostgreQueries) GetAllURLs(ctx context.Context) ([]entities.RDBURL, err
 	}
 	// convert to entity models
 	// []sqlcgen.GetAllURLsRow
-	urls := adapter.DBURLsToEntityModel(urlsRow)
+	urls := adapter.URLIDAddressesToEntityModel(urlsRow)
 	return urls, nil
 }
 

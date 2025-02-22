@@ -13,7 +13,7 @@ import (
 type BookmarkRepositorier interface {
 	Close(ctx context.Context)
 	// PostgreSQL
-	GetAllURLs(ctx context.Context) ([]entities.RDBURL, error)
+	GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error)
 	GetURLID(ctx context.Context, url string) (int32, error)
 	InsertURL(
 		ctx context.Context,
@@ -78,7 +78,7 @@ func (b *bookmarkRepository) Close(ctx context.Context) {
 
 // PostgreSQL
 
-func (b *bookmarkRepository) GetAllURLs(ctx context.Context) ([]entities.RDBURL, error) {
+func (b *bookmarkRepository) GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error) {
 	return b.postgreQueries.GetAllURLs(ctx)
 }
 

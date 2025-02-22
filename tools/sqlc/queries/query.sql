@@ -1,3 +1,16 @@
+-- name: GetURLsByURLAddresses :many
+-- @desc: get url information by url address
+SELECT DISTINCT ON (u.url_address)
+  u.url_id, u.url_address, u.category_code, u.bookmark_count, u.named_user_count, u.private_user_rate
+FROM
+  URLs u
+WHERE
+  u.is_deleted = FALSE
+AND
+  u.url_address = ANY($1::text[])
+ORDER BY
+  u.url_address, u.url_id;
+
 -- name: GetAllURLs :many
 -- @desc: get all url addresses
 SELECT

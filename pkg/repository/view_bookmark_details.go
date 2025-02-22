@@ -10,7 +10,7 @@ import (
 
 type BookmarkDetailsRepositorier interface {
 	Close(ctx context.Context)
-	GetAllURLs(ctx context.Context) ([]entities.RDBURL, error)
+	GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error)
 	GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error)
 }
 
@@ -39,7 +39,7 @@ func (b *bookmarkDetailsRepository) Close(ctx context.Context) {
 
 // PostgreSQL
 
-func (b *bookmarkDetailsRepository) GetAllURLs(ctx context.Context) ([]entities.RDBURL, error) {
+func (b *bookmarkDetailsRepository) GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error) {
 	return b.postgreQueries.GetAllURLs(ctx)
 }
 

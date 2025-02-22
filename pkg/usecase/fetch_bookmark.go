@@ -60,7 +60,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 	}()
 
 	// get urls from DB if needed
-	var entityURLs []entities.RDBURL
+	var entityURLs []entities.URLIDAddress
 	if len(f.urls) == 0 {
 		var err error
 		entityURLs, err = f.bookmarkRepo.GetAllURLs(ctx)
@@ -72,13 +72,13 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 		// isDBURLs = true
 	} else {
 		for _, url := range f.urls {
-			entityURLs = append(entityURLs, entities.RDBURL{URLAddress: url})
+			entityURLs = append(entityURLs, entities.URLIDAddress{Address: url})
 		}
 	}
 
 	for _, entityURL := range entityURLs {
 		// load existing bookmark data from DB
-		existingBookmark, err := f.load(ctx, entityURL.URLAddress)
+		existingBookmark, err := f.load(ctx, entityURL.Address)
 		if err != nil {
 			continue
 		}
@@ -93,7 +93,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 		}
 
 		// retrieve latest data from URL
-		newBookmark, err := f.fetch(ctx, entityURL.URLAddress)
+		newBookmark, err := f.fetch(ctx, entityURL.Address)
 		if err != nil {
 			continue
 		}
@@ -111,7 +111,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 			}
 		}
 		f.logger.Info("bookmark entity will be stored",
-			"url", entityURL.URLAddress,
+			"url", entityURL.Address,
 			"newBookmark.Title", existingBookmark.Title,
 			"newBookmark.Count", existingBookmark.Count,
 			"newBookmark.User.Length", len(existingBookmark.Users),
@@ -188,32 +188,32 @@ func (f *fetchBookmarkUsecase) fetch(ctx context.Context, url string) (*entities
 
 func (f *fetchBookmarkUsecase) save(
 	ctx context.Context,
-	entityURL *entities.RDBURL,
+	entityURL *entities.URLIDAddress,
 	bookmark *entities.Bookmark,
 ) error {
 	// InfluxDB
-	err := f.bookmarkRepo.WriteEntitySummary(ctx, entityURL.URLAddress, bookmark)
+	err := f.bookmarkRepo.WriteEntitySummary(ctx, entityURL.Address, bookmark)
 	if err != nil {
 		f.logger.Error(
 			"failed to call bookmarkRepo.WriteEntitySummary()",
-			"url", entityURL.URLAddress,
+			"url", entityURL.Address,
 			"error", err,
 		)
 		return err
 	}
 
 	// MongoDB
-	err = f.bookmarkRepo.WriteEntity(ctx, entityURL.URLAddress, bookmark)
+	err = f.bookmarkRepo.WriteEntity(ctx, entityURL.Address, bookmark)
 	if err != nil {
-		f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", entityURL.URLAddress, "error", err)
+		f.logger.Error("failed to call bookmarkRepo.WriteEntity()", "url", entityURL.Address, "error", err)
 		return err
 	}
 
 	// Upsert URL to PostgreSQL DB
-	if entityURL.URLID == 0 { // url comes from environment variable
+	if entityURL.ID == 0 { // url comes from environment variable
 		urlID, err := f.bookmarkRepo.UpsertURL(
 			ctx,
-			entityURL.URLAddress,
+			entityURL.Address,
 			entities.Knowledge,
 			bookmark.Count,
 			len(bookmark.Users),
@@ -222,7 +222,7 @@ func (f *fetchBookmarkUsecase) save(
 		if err != nil && !rdb.IsNoRows(err) {
 			f.logger.Error(
 				"failed to call bookmarkRepo.UpsertURL()",
-				"url", entityURL.URLAddress,
+				"url", entityURL.Address,
 				"error", err,
 			)
 			return err
@@ -231,17 +231,17 @@ func (f *fetchBookmarkUsecase) save(
 			err := errors.New("urlID is 0")
 			f.logger.Error(
 				"failed to call bookmarkRepo.UpsertURL()",
-				"url", entityURL.URLAddress,
+				"url", entityURL.Address,
 				"error", err,
 			)
 			return err
 		}
-		entityURL.URLID = urlID
+		entityURL.ID = urlID
 	} else {
 		// update by urlID
 		_, err := f.bookmarkRepo.UpdateURL(
 			ctx,
-			entityURL.URLID,
+			entityURL.ID,
 			bookmark.Count,
 			len(bookmark.Users),
 			entities.PrivateUserRate(bookmark.Count, len(bookmark.Users)),
@@ -249,7 +249,7 @@ func (f *fetchBookmarkUsecase) save(
 		if err != nil && !rdb.IsNoRows(err) {
 			f.logger.Error(
 				"failed to call bookmarkRepo.UpdateURL()",
-				"urlID", entityURL.URLID,
+				"urlID", entityURL.ID,
 				"error", err,
 			)
 			return err
@@ -264,20 +264,20 @@ func (f *fetchBookmarkUsecase) save(
 			f.logger.Warn("failed to call bookmarkRepo.UpsertUser()", "userName", users.Name, "error", err)
 		}
 		// UserURLs
-		err = f.bookmarkRepo.UpsertUserURLs(ctx, userID, entityURL.URLID)
+		err = f.bookmarkRepo.UpsertUserURLs(ctx, userID, entityURL.ID)
 		if err != nil {
 			// FIXED: ERROR: insert or update on table "userurls" violates foreign key
 			// constraint "userurls_url_id_fkey" (SQLSTATE 23503)
 			f.logger.Warn(
 				"failed to call bookmarkRepo.UpsertUserURLs()",
 				"userID", userID,
-				"urlID", entityURL.URLID,
+				"urlID", entityURL.ID,
 				"error", err,
 			)
 		}
 	}
 
-	f.logger.Info("bookmark data saved", "url", entityURL.URLAddress)
+	f.logger.Info("bookmark data saved", "url", entityURL.Address)
 	return nil
 }
 

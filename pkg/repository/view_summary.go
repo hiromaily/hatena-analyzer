@@ -12,7 +12,7 @@ import (
 type SummaryRepositorier interface {
 	Close(ctx context.Context)
 	ReadEntitySummaries(ctx context.Context, url string) ([]*entities.BookmarkSummary, error)
-	GetAllURLs(ctx context.Context) ([]entities.RDBURL, error)
+	GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error)
 	GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error)
 }
 
@@ -54,7 +54,7 @@ func (s *summaryRepository) ReadEntitySummaries(
 
 // PostgreSQL
 
-func (s *summaryRepository) GetAllURLs(ctx context.Context) ([]entities.RDBURL, error) {
+func (s *summaryRepository) GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error) {
 	return s.postgreQueries.GetAllURLs(ctx)
 }
 

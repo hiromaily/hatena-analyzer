@@ -112,6 +112,56 @@ func (q *Queries) GetBookmarkedUsersURLCounts(ctx context.Context) ([]GetBookmar
 	return items, nil
 }
 
+const getURLsByURLAddresses = `-- name: GetURLsByURLAddresses :many
+SELECT DISTINCT ON (u.url_address)
+  u.url_id, u.url_address, u.category_code, u.bookmark_count, u.named_user_count, u.private_user_rate
+FROM
+  URLs u
+WHERE
+  u.is_deleted = FALSE
+AND
+  u.url_address = ANY($1::text[])
+ORDER BY
+  u.url_address, u.url_id
+`
+
+type GetURLsByURLAddressesRow struct {
+	UrlID           int32
+	UrlAddress      string
+	CategoryCode    pgtype.Text
+	BookmarkCount   pgtype.Int4
+	NamedUserCount  pgtype.Int4
+	PrivateUserRate pgtype.Float8
+}
+
+// @desc: get url information by url address
+func (q *Queries) GetURLsByURLAddresses(ctx context.Context, dollar_1 []string) ([]GetURLsByURLAddressesRow, error) {
+	rows, err := q.db.Query(ctx, getURLsByURLAddresses, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetURLsByURLAddressesRow
+	for rows.Next() {
+		var i GetURLsByURLAddressesRow
+		if err := rows.Scan(
+			&i.UrlID,
+			&i.UrlAddress,
+			&i.CategoryCode,
+			&i.BookmarkCount,
+			&i.NamedUserCount,
+			&i.PrivateUserRate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUrlID = `-- name: GetUrlID :one
 SELECT
   u.url_id

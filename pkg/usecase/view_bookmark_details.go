@@ -62,6 +62,8 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 	// }
 
 	for _, url := range b.urls {
+		// get url info from DB
+
 		// get user by URL info from DB
 		users, err := b.bookmarkDetailsRepo.GetUsersByURL(ctx, url)
 		if err != nil {
