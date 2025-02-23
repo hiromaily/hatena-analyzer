@@ -19,6 +19,7 @@ type summaryUsecase struct {
 	tracer      tracer.Tracer
 	summaryRepo repository.SummaryRepositorier
 	urls        []string
+	threshold   uint
 }
 
 func NewViewSummaryUsecase(
@@ -26,6 +27,7 @@ func NewViewSummaryUsecase(
 	tracer tracer.Tracer,
 	summaryRepo repository.SummaryRepositorier,
 	urls []string,
+	threshold uint,
 ) (*summaryUsecase, error) {
 	// validation
 	// if len(urls) == 0 {
@@ -37,6 +39,7 @@ func NewViewSummaryUsecase(
 		tracer:      tracer,
 		summaryRepo: summaryRepo,
 		urls:        urls,
+		threshold:   threshold,
 	}, nil
 }
 
@@ -73,14 +76,16 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 
 	s.logger.Info("url count", "count", len(entityURLs))
 	for _, entityURL := range entityURLs {
-		s.logger.Info(
-			"url info",
-			"url", entityURL.Address,
-			"title", entityURL.Title,
-			"bm_count", entityURL.BookmarkCount,
-			"user_count", entityURL.NamedUserCount,
-			"private_user_rate", entityURL.PrivateUserRate,
-		)
+		if entityURL.PrivateUserRate > float64(s.threshold) {
+			s.logger.Info(
+				"url info",
+				"url", entityURL.Address,
+				"title", entityURL.Title,
+				"bm_count", entityURL.BookmarkCount,
+				"user_count", entityURL.NamedUserCount,
+				"private_user_rate", entityURL.PrivateUserRate,
+			)
+		}
 	}
 
 	fmt.Println("")

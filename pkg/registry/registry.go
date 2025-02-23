@@ -207,6 +207,7 @@ func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
 		r.newTracer(r.appCode.String()),
 		r.newSummaryRepository(),
 		r.urls,
+		50, // FIXME: cli args
 	)
 	if err != nil {
 		panic(err)
