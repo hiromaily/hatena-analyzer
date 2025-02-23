@@ -73,6 +73,43 @@ func (q *Queries) GetAllURLs(ctx context.Context) ([]GetAllURLsRow, error) {
 	return items, nil
 }
 
+const getAveragePrivateUserRates = `-- name: GetAveragePrivateUserRates :many
+SELECT
+  category_code, AVG(private_user_rate) AS average_private_user_rate
+FROM 
+  URLs
+WHERE 
+  is_deleted = FALSE
+GROUP BY 
+  category_code
+`
+
+type GetAveragePrivateUserRatesRow struct {
+	CategoryCode           pgtype.Text
+	AveragePrivateUserRate float64
+}
+
+// @desc: get average private user rates on all categories
+func (q *Queries) GetAveragePrivateUserRates(ctx context.Context) ([]GetAveragePrivateUserRatesRow, error) {
+	rows, err := q.db.Query(ctx, getAveragePrivateUserRates)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAveragePrivateUserRatesRow
+	for rows.Next() {
+		var i GetAveragePrivateUserRatesRow
+		if err := rows.Scan(&i.CategoryCode, &i.AveragePrivateUserRate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getBookmarkedUsersURLCounts = `-- name: GetBookmarkedUsersURLCounts :many
 SELECT 
     user_id, COUNT(user_id) AS url_count

@@ -35,12 +35,12 @@ type registry struct {
 	targetHandler handler.Handler
 
 	// repositories
-	bookmarkRepo        repository.BookmarkRepositorier
-	summaryRepo         repository.SummaryRepositorier
+	fetchBookmarkRepo   repository.FetchBookmarkRepositorier
+	fetchURLRepo        repository.FetchURLRepositorier
+	fetchUserRepo       repository.FetchUserRepositorier
 	timeSeriesRepo      repository.TimeSeriesRepositorier
 	bookmarkDetailsRepo repository.BookmarkDetailsRepositorier
-	userRepo            repository.UserRepositorier
-	urlRepo             repository.URLRepositorier
+	summaryRepo         repository.SummaryRepositorier
 	// db clients
 	postgresQueries *rdb.PostgreQueries
 	influxDBQueries *influxdb.InfluxDBQueries
@@ -233,16 +233,16 @@ func (r *registry) newFetchUserBookmarkCountUsecase() usecase.FetchUserBookmarkC
 /// Repositories
 ///
 
-func (r *registry) newBookmarkRepository() repository.BookmarkRepositorier {
-	if r.bookmarkRepo == nil {
-		r.bookmarkRepo = repository.NewBookmarkRepository(
+func (r *registry) newBookmarkRepository() repository.FetchBookmarkRepositorier {
+	if r.fetchBookmarkRepo == nil {
+		r.fetchBookmarkRepo = repository.NewFetchBookmarkRepository(
 			r.newLogger(),
 			r.newPostgresQueries(),
 			r.newInfluxDBQueries(),
 			r.newMongoDBQueries(),
 		)
 	}
-	return r.bookmarkRepo
+	return r.fetchBookmarkRepo
 }
 
 func (r *registry) newTimeSeriesRepository() repository.TimeSeriesRepositorier {
@@ -276,24 +276,24 @@ func (r *registry) newSummaryRepository() repository.SummaryRepositorier {
 	return r.summaryRepo
 }
 
-func (r *registry) newUserRepository() repository.UserRepositorier {
-	if r.userRepo == nil {
-		r.userRepo = repository.NewUserRepository(
+func (r *registry) newUserRepository() repository.FetchUserRepositorier {
+	if r.fetchUserRepo == nil {
+		r.fetchUserRepo = repository.NewFetchUserRepository(
 			r.newLogger(),
 			r.newPostgresQueries(),
 		)
 	}
-	return r.userRepo
+	return r.fetchUserRepo
 }
 
-func (r *registry) newURLRepository() repository.URLRepositorier {
-	if r.urlRepo == nil {
-		r.urlRepo = repository.NewURLRepository(
+func (r *registry) newURLRepository() repository.FetchURLRepositorier {
+	if r.fetchURLRepo == nil {
+		r.fetchURLRepo = repository.NewFetchURLRepository(
 			r.newLogger(),
 			r.newPostgresQueries(),
 		)
 	}
-	return r.urlRepo
+	return r.fetchURLRepo
 }
 
 ///

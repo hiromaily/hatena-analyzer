@@ -18,7 +18,7 @@ type FetchHatenaPageURLsUsecaser interface {
 type fetchHatenaPageURLsUsecase struct {
 	logger               logger.Logger
 	tracer               tracer.Tracer
-	urlRepo              repository.URLRepositorier
+	fetchURLRepo         repository.FetchURLRepositorier
 	hatenaPageURLFetcher fetcher.HatenaPageURLFetcher
 	categoryCode         entities.CategoryCode
 }
@@ -33,7 +33,7 @@ type fetchHatenaPageURLsUsecase struct {
 func NewFetchHatenaPageURLsUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
-	urlRepo repository.URLRepositorier,
+	fetchURLRepo repository.FetchURLRepositorier,
 	hatenaPageURLFetcher fetcher.HatenaPageURLFetcher,
 	categoryCode entities.CategoryCode,
 ) (*fetchHatenaPageURLsUsecase, error) {
@@ -42,7 +42,7 @@ func NewFetchHatenaPageURLsUsecase(
 	return &fetchHatenaPageURLsUsecase{
 		logger:               logger,
 		tracer:               tracer,
-		urlRepo:              urlRepo,
+		fetchURLRepo:         fetchURLRepo,
 		hatenaPageURLFetcher: hatenaPageURLFetcher,
 		categoryCode:         categoryCode,
 	}, nil
@@ -52,7 +52,7 @@ func NewFetchHatenaPageURLsUsecase(
 
 func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
-	defer f.urlRepo.Close(ctx)
+	defer f.fetchURLRepo.Close(ctx)
 
 	_, span := f.tracer.NewSpan(ctx, "fetchURLsUsecase:Execute()")
 	defer func() {
@@ -97,7 +97,7 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 		// FIXME: duplicate key value violates unique constraint "urls_url_address_key" (SQLSTATE 23505)
 		// TODO: create stored procedure to avoid conflict error
 		f.logger.Info("insert urls", "category", category.String(), "url_count", len(pageURLs))
-		if err := f.urlRepo.InsertURLs(ctx, category, pageURLs); err != nil {
+		if err := f.fetchURLRepo.InsertURLs(ctx, category, pageURLs); err != nil {
 			f.logger.Error("failed to insert URLs", "category", category.String(), "error", err)
 		}
 		totalFetchedURLs = append(totalFetchedURLs, pageURLs...)

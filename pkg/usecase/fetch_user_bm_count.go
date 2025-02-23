@@ -20,7 +20,7 @@ type FetchUserBookmarkCountUsecaser interface {
 type fetchUserBookmarkCountUsecase struct {
 	logger             logger.Logger
 	tracer             tracer.Tracer
-	userRepo           repository.UserRepositorier
+	fetchUserRepo      repository.FetchUserRepositorier
 	userBMCountFetcher fetcher.UserBookmarkCountFetcher
 	maxWorker          int64 // for semaphore
 	urls               []string
@@ -29,7 +29,7 @@ type fetchUserBookmarkCountUsecase struct {
 func NewFetchUserBookmarkCountUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
-	userRepo repository.UserRepositorier,
+	fetchUserRepo repository.FetchUserRepositorier,
 	userBMCountFetcher fetcher.UserBookmarkCountFetcher,
 	maxWorker int64,
 	urls []string,
@@ -41,7 +41,7 @@ func NewFetchUserBookmarkCountUsecase(
 	return &fetchUserBookmarkCountUsecase{
 		logger:             logger,
 		tracer:             tracer,
-		userRepo:           userRepo,
+		fetchUserRepo:      fetchUserRepo,
 		userBMCountFetcher: userBMCountFetcher,
 		maxWorker:          maxWorker,
 		urls:               urls,
@@ -53,7 +53,7 @@ func NewFetchUserBookmarkCountUsecase(
 
 func (f *fetchUserBookmarkCountUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
-	defer f.userRepo.Close(ctx)
+	defer f.fetchUserRepo.Close(ctx)
 
 	_, span := f.tracer.NewSpan(ctx, "fetchUserBookmarkCountUsecase:Execute()")
 	defer func() {
@@ -65,13 +65,13 @@ func (f *fetchUserBookmarkCountUsecase) Execute(ctx context.Context) error {
 	var users []string
 	var err error
 	if len(f.urls) == 0 {
-		users, err = f.userRepo.GetUserNames(ctx)
+		users, err = f.fetchUserRepo.GetUserNames(ctx)
 		if err != nil {
 			f.logger.Error("failed to get users", "error", err)
 			return err
 		}
 	} else {
-		users, err = f.userRepo.GetUserNamesByURLS(ctx, f.urls)
+		users, err = f.fetchUserRepo.GetUserNamesByURLS(ctx, f.urls)
 		if err != nil {
 			f.logger.Error("failed to get users by urls", "error", err)
 			return err
@@ -111,7 +111,7 @@ func (f *fetchUserBookmarkCountUsecase) concurrentExecuter(ctx context.Context, 
 			// s.logger.Debug("user info", "user_name", userName, "bm_count", bmCount)
 
 			// 2. save data to DB
-			if err := f.userRepo.UpdateUserBookmarkCount(ctx, userName, bmCount); err != nil {
+			if err := f.fetchUserRepo.UpdateUserBookmarkCount(ctx, userName, bmCount); err != nil {
 				//FIXED: failed to deallocate cached statement(s): conn busy
 				f.logger.Error("failed to update user bookmark count", "user_name", userName, "error", err)
 				return

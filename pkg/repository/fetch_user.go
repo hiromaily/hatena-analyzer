@@ -7,40 +7,40 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 )
 
-type UserRepositorier interface {
+type FetchUserRepositorier interface {
 	Close(ctx context.Context) error
 	GetUserNames(ctx context.Context) ([]string, error)
 	GetUserNamesByURLS(ctx context.Context, urls []string) ([]string, error)
 	UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error
 }
 
-type userRepository struct {
+type fetchUserRepository struct {
 	logger         logger.Logger
 	postgreQueries *rdb.PostgreQueries
 }
 
-func NewUserRepository(
+func NewFetchUserRepository(
 	logger logger.Logger,
 	postgreQueries *rdb.PostgreQueries,
-) *userRepository {
-	return &userRepository{
+) *fetchUserRepository {
+	return &fetchUserRepository{
 		logger:         logger,
 		postgreQueries: postgreQueries,
 	}
 }
 
-func (u *userRepository) Close(ctx context.Context) error {
-	return u.postgreQueries.Close(ctx)
+func (f *fetchUserRepository) Close(ctx context.Context) error {
+	return f.postgreQueries.Close(ctx)
 }
 
-func (u *userRepository) GetUserNames(ctx context.Context) ([]string, error) {
-	return u.postgreQueries.GetUserNames(ctx)
+func (f *fetchUserRepository) GetUserNames(ctx context.Context) ([]string, error) {
+	return f.postgreQueries.GetUserNames(ctx)
 }
 
-func (u *userRepository) GetUserNamesByURLS(ctx context.Context, urls []string) ([]string, error) {
-	return u.postgreQueries.GetUserNamesByURLS(ctx, urls)
+func (f *fetchUserRepository) GetUserNamesByURLS(ctx context.Context, urls []string) ([]string, error) {
+	return f.postgreQueries.GetUserNamesByURLS(ctx, urls)
 }
 
-func (u *userRepository) UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error {
-	return u.postgreQueries.UpdateUserBookmarkCount(ctx, userName, count)
+func (f *fetchUserRepository) UpdateUserBookmarkCount(ctx context.Context, userName string, count int) error {
+	return f.postgreQueries.UpdateUserBookmarkCount(ctx, userName, count)
 }

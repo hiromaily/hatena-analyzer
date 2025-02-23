@@ -10,7 +10,7 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 )
 
-type BookmarkRepositorier interface {
+type FetchBookmarkRepositorier interface {
 	Close(ctx context.Context)
 	// PostgreSQL
 	GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error)
@@ -48,23 +48,23 @@ type BookmarkRepositorier interface {
 }
 
 //
-// bookmarkRepository Implementation
+// fetchBookmarkRepository Implementation
 //
 
-type bookmarkRepository struct {
+type fetchBookmarkRepository struct {
 	logger          logger.Logger
 	postgreQueries  *rdb.PostgreQueries
 	influxDBQueries *influxdb.InfluxDBQueries
 	mongoDBQueries  *mongodb.MongoDBQueries
 }
 
-func NewBookmarkRepository(
+func NewFetchBookmarkRepository(
 	logger logger.Logger,
 	postgreQueries *rdb.PostgreQueries,
 	influxDBQueries *influxdb.InfluxDBQueries,
 	mongoDBQueries *mongodb.MongoDBQueries,
-) *bookmarkRepository {
-	return &bookmarkRepository{
+) *fetchBookmarkRepository {
+	return &fetchBookmarkRepository{
 		logger:          logger,
 		postgreQueries:  postgreQueries,
 		influxDBQueries: influxDBQueries,
@@ -72,32 +72,32 @@ func NewBookmarkRepository(
 	}
 }
 
-func (b *bookmarkRepository) Close(ctx context.Context) {
-	b.postgreQueries.Close(ctx)
-	b.influxDBQueries.Close(ctx)
-	b.mongoDBQueries.Close(ctx)
+func (f *fetchBookmarkRepository) Close(ctx context.Context) {
+	f.postgreQueries.Close(ctx)
+	f.influxDBQueries.Close(ctx)
+	f.mongoDBQueries.Close(ctx)
 }
 
 // PostgreSQL
 
-func (b *bookmarkRepository) GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error) {
-	return b.postgreQueries.GetAllURLs(ctx)
+func (f *fetchBookmarkRepository) GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error) {
+	return f.postgreQueries.GetAllURLs(ctx)
 }
 
-func (b *bookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
-	return b.postgreQueries.GetURLID(ctx, url)
+func (f *fetchBookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
+	return f.postgreQueries.GetURLID(ctx, url)
 }
 
-func (b *bookmarkRepository) InsertURL(
+func (f *fetchBookmarkRepository) InsertURL(
 	ctx context.Context,
 	url string,
 	categoryCode entities.CategoryCode,
 	bmCount, userCount int,
 ) (int32, error) {
-	return b.postgreQueries.InsertURL(ctx, url, categoryCode, bmCount, userCount)
+	return f.postgreQueries.InsertURL(ctx, url, categoryCode, bmCount, userCount)
 }
 
-func (b *bookmarkRepository) UpsertURL(
+func (f *fetchBookmarkRepository) UpsertURL(
 	ctx context.Context,
 	url string,
 	categoryCode entities.CategoryCode,
@@ -105,54 +105,58 @@ func (b *bookmarkRepository) UpsertURL(
 	bmCount, userCount int,
 	privateUserRate float64,
 ) (int32, error) {
-	return b.postgreQueries.UpsertURL(ctx, url, categoryCode, title, bmCount, userCount, privateUserRate)
+	return f.postgreQueries.UpsertURL(ctx, url, categoryCode, title, bmCount, userCount, privateUserRate)
 }
 
-func (b *bookmarkRepository) UpdateURL(
+func (f *fetchBookmarkRepository) UpdateURL(
 	ctx context.Context,
 	urlID int32,
 	title string,
 	bmCount, userCount int,
 	privateUserRate float64,
 ) (int64, error) {
-	return b.postgreQueries.UpdateURL(ctx, urlID, title, bmCount, userCount, privateUserRate)
+	return f.postgreQueries.UpdateURL(ctx, urlID, title, bmCount, userCount, privateUserRate)
 }
 
 // func (b *bookmarkRepository) InsertUser(ctx context.Context, userName string) error {
 // 	return b.postgreQueries.InsertUser(ctx, userName)
 // }
 
-func (b *bookmarkRepository) UpsertUser(ctx context.Context, userName string) (int32, error) {
-	return b.postgreQueries.UpsertUser(ctx, userName)
+func (f *fetchBookmarkRepository) UpsertUser(ctx context.Context, userName string) (int32, error) {
+	return f.postgreQueries.UpsertUser(ctx, userName)
 }
 
-func (b *bookmarkRepository) UpsertUserURLs(ctx context.Context, userID, urlID int32) error {
-	return b.postgreQueries.UpsertUserURLs(ctx, userID, urlID)
+func (f *fetchBookmarkRepository) UpsertUserURLs(ctx context.Context, userID, urlID int32) error {
+	return f.postgreQueries.UpsertUserURLs(ctx, userID, urlID)
 }
 
 // InfluxDB
 
-func (b *bookmarkRepository) ReadEntitySummary(
+func (f *fetchBookmarkRepository) ReadEntitySummary(
 	ctx context.Context,
 	url string,
 ) (*entities.BookmarkSummary, error) {
-	return b.influxDBQueries.ReadEntitySummary(ctx, url)
+	return f.influxDBQueries.ReadEntitySummary(ctx, url)
 }
 
-func (b *bookmarkRepository) WriteEntitySummary(
+func (f *fetchBookmarkRepository) WriteEntitySummary(
 	ctx context.Context,
 	url string,
 	bookmark *entities.Bookmark,
 ) error {
-	return b.influxDBQueries.WriteEntitySummary(ctx, url, bookmark)
+	return f.influxDBQueries.WriteEntitySummary(ctx, url, bookmark)
 }
 
 // MongoDB
 
-func (b *bookmarkRepository) ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error) {
-	return b.mongoDBQueries.ReadEntity(ctx, url)
+func (f *fetchBookmarkRepository) ReadEntity(ctx context.Context, url string) (*entities.Bookmark, error) {
+	return f.mongoDBQueries.ReadEntity(ctx, url)
 }
 
-func (b *bookmarkRepository) WriteEntity(ctx context.Context, url string, bookmark *entities.Bookmark) error {
-	return b.mongoDBQueries.WriteEntity(ctx, url, bookmark)
+func (f *fetchBookmarkRepository) WriteEntity(
+	ctx context.Context,
+	url string,
+	bookmark *entities.Bookmark,
+) error {
+	return f.mongoDBQueries.WriteEntity(ctx, url, bookmark)
 }

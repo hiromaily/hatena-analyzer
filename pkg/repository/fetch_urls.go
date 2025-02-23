@@ -8,31 +8,35 @@ import (
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 )
 
-type URLRepositorier interface {
+type FetchURLRepositorier interface {
 	Close(ctx context.Context) error
 	InsertURLs(ctx context.Context, category entities.CategoryCode, urls []string) error
 }
 
-type urlRepository struct {
+type fetchURLRepository struct {
 	logger         logger.Logger
 	postgreQueries *rdb.PostgreQueries
 }
 
-func NewURLRepository(
+func NewFetchURLRepository(
 	logger logger.Logger,
 	postgreQueries *rdb.PostgreQueries,
-) *urlRepository {
-	return &urlRepository{
+) *fetchURLRepository {
+	return &fetchURLRepository{
 		logger:         logger,
 		postgreQueries: postgreQueries,
 	}
 }
 
-func (u *urlRepository) Close(ctx context.Context) error {
-	return u.postgreQueries.Close(ctx)
+func (f *fetchURLRepository) Close(ctx context.Context) error {
+	return f.postgreQueries.Close(ctx)
 }
 
-func (u *urlRepository) InsertURLs(ctx context.Context, category entities.CategoryCode, urls []string) error {
-	_, err := u.postgreQueries.InsertURLs(ctx, category, urls)
+func (f *fetchURLRepository) InsertURLs(
+	ctx context.Context,
+	category entities.CategoryCode,
+	urls []string,
+) error {
+	_, err := f.postgreQueries.InsertURLs(ctx, category, urls)
 	return err
 }

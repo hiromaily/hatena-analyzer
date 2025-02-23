@@ -23,7 +23,7 @@ type FetchBookmarkUsecaser interface {
 type fetchBookmarkUsecase struct {
 	logger            logger.Logger
 	tracer            tracer.Tracer
-	bookmarkRepo      repository.BookmarkRepositorier
+	bookmarkRepo      repository.FetchBookmarkRepositorier
 	entityJSONFetcher fetcher.EntityJSONFetcher
 	maxWorker         int64 // for semaphore
 	urls              []string
@@ -36,7 +36,7 @@ type fetchBookmarkUsecase struct {
 func NewFetchBookmarkUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
-	bookmarkRepo repository.BookmarkRepositorier,
+	bookmarkRepo repository.FetchBookmarkRepositorier,
 	entityJSONFetcher fetcher.EntityJSONFetcher,
 	maxWorker int64,
 	urls []string,

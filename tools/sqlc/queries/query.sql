@@ -193,3 +193,14 @@ FROM
     HAVING
       COUNT(user_id) = 4
   ) AS subquery;
+
+-- name: GetAveragePrivateUserRates :many
+-- @desc: get average private user rates on all categories
+SELECT
+  category_code, AVG(private_user_rate) AS average_private_user_rate
+FROM 
+  URLs
+WHERE 
+  is_deleted = FALSE
+GROUP BY 
+  category_code;
