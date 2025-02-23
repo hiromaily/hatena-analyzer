@@ -13,12 +13,14 @@ ORDER BY
 
 -- name: GetAllURLs :many
 -- @desc: get all url addresses
-SELECT
-  u.url_id, u.url_address
+SELECT DISTINCT ON (u.url_address)
+  u.url_id, u.url_address, u.category_code, u.title, u.bookmark_count, u.named_user_count, u.private_user_rate
 FROM
   URLs u
 WHERE
-  u.is_deleted = FALSE;
+  u.is_deleted = FALSE
+ORDER BY
+  u.url_address, u.url_id;
 
 -- name: GetUrlID :one
 -- @desc: get target url_id by url address

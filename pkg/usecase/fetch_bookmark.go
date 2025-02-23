@@ -69,7 +69,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 	}()
 
 	// get urls from DB if needed
-	var entityURLs []entities.URLIDAddress
+	var entityURLs []entities.URL
 	if len(f.urls) == 0 {
 		var err error
 		entityURLs, err = f.bookmarkRepo.GetAllURLs(ctx)
@@ -79,7 +79,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 		}
 	} else {
 		for _, url := range f.urls {
-			entityURLs = append(entityURLs, entities.URLIDAddress{Address: url})
+			entityURLs = append(entityURLs, entities.URL{Address: url})
 		}
 	}
 
@@ -88,7 +88,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 
 func (f *fetchBookmarkUsecase) concurrentExecuter(
 	ctx context.Context,
-	entityURLs []entities.URLIDAddress,
+	entityURLs []entities.URL,
 ) error {
 	sem := semaphore.NewWeighted(f.maxWorker)
 	var wg sync.WaitGroup
@@ -104,7 +104,7 @@ func (f *fetchBookmarkUsecase) concurrentExecuter(
 			break
 		}
 
-		go func(entityURL entities.URLIDAddress) {
+		go func(entityURL entities.URL) {
 			defer func() {
 				wg.Done()
 				sem.Release(1)
@@ -223,7 +223,7 @@ func (f *fetchBookmarkUsecase) fetch(ctx context.Context, url string) (*entities
 
 func (f *fetchBookmarkUsecase) save(
 	ctx context.Context,
-	entityURL *entities.URLIDAddress,
+	entityURL *entities.URL,
 	bookmark *entities.Bookmark,
 ) error {
 	// InfluxDB

@@ -39,17 +39,24 @@ func (q *Queries) CountGetBookmarkedUsersURLCounts(ctx context.Context) (int64, 
 }
 
 const getAllURLs = `-- name: GetAllURLs :many
-SELECT
-  u.url_id, u.url_address
+SELECT DISTINCT ON (u.url_address)
+  u.url_id, u.url_address, u.category_code, u.title, u.bookmark_count, u.named_user_count, u.private_user_rate
 FROM
   URLs u
 WHERE
   u.is_deleted = FALSE
+ORDER BY
+  u.url_address, u.url_id
 `
 
 type GetAllURLsRow struct {
-	UrlID      int32
-	UrlAddress string
+	UrlID           int32
+	UrlAddress      string
+	CategoryCode    pgtype.Text
+	Title           pgtype.Text
+	BookmarkCount   pgtype.Int4
+	NamedUserCount  pgtype.Int4
+	PrivateUserRate pgtype.Float8
 }
 
 // @desc: get all url addresses
@@ -62,7 +69,15 @@ func (q *Queries) GetAllURLs(ctx context.Context) ([]GetAllURLsRow, error) {
 	var items []GetAllURLsRow
 	for rows.Next() {
 		var i GetAllURLsRow
-		if err := rows.Scan(&i.UrlID, &i.UrlAddress); err != nil {
+		if err := rows.Scan(
+			&i.UrlID,
+			&i.UrlAddress,
+			&i.CategoryCode,
+			&i.Title,
+			&i.BookmarkCount,
+			&i.NamedUserCount,
+			&i.PrivateUserRate,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -5,7 +5,7 @@ type URLIDAddress struct {
 	Address string
 }
 
-func FilterURLAddress(urls []URLIDAddress) []string {
+func FilterURLAddress(urls []URL) []string {
 	urlAddresses := make([]string, 0, len(urls))
 	for _, url := range urls {
 		urlAddresses = append(urlAddresses, url.Address)

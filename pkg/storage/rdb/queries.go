@@ -51,7 +51,7 @@ func (p *PostgreQueries) GetURLsByURLAddresses(ctx context.Context, urls []strin
 	return urlModels, nil
 }
 
-func (p *PostgreQueries) GetAllURLs(ctx context.Context) ([]entities.URLIDAddress, error) {
+func (p *PostgreQueries) GetAllURLs(ctx context.Context) ([]entities.URL, error) {
 	queries, release, err := p.rdbClient.GetQueries(ctx)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (p *PostgreQueries) GetAllURLs(ctx context.Context) ([]entities.URLIDAddres
 	}
 	// convert to entity models
 	// []sqlcgen.GetAllURLsRow
-	urls := adapter.URLIDAddressesToEntityModel(urlsRow)
+	urls := adapter.AllURLsToEntityModel(urlsRow)
 	return urls, nil
 }
 
