@@ -105,6 +105,7 @@ func (p *PostgreQueries) UpsertURL(
 	ctx context.Context,
 	url string,
 	categoryCode entities.CategoryCode,
+	title string,
 	bmCount, userCount int,
 	privateUserRate float64,
 ) (int32, error) {
@@ -120,7 +121,8 @@ func (p *PostgreQueries) UpsertURL(
 
 	params := sqlcgen.UpsertURLParams{
 		UrlAddress:      url,
-		CategoryCode:    pgtype.Text{String: categoryCode.String(), Valid: categoryCode != ""},
+		CategoryCode:    pgtype.Text{String: categoryCode.String(), Valid: true},
+		Title:           pgtype.Text{String: title, Valid: true},
 		BookmarkCount:   pgtype.Int4{Int32: int32(bmCount), Valid: true},
 		NamedUserCount:  pgtype.Int4{Int32: int32(userCount), Valid: true},
 		PrivateUserRate: pgtype.Float8{Float64: privateUserRate, Valid: true},
@@ -131,6 +133,7 @@ func (p *PostgreQueries) UpsertURL(
 func (p *PostgreQueries) UpdateURL(
 	ctx context.Context,
 	urlID int32,
+	title string,
 	bmCount, userCount int,
 	privateUserRate float64,
 ) (int64, error) {
@@ -145,6 +148,7 @@ func (p *PostgreQueries) UpdateURL(
 	defer release()
 
 	params := sqlcgen.UpdateURLParams{
+		Title:           pgtype.Text{String: title, Valid: true},
 		BookmarkCount:   pgtype.Int4{Int32: int32(bmCount), Valid: true},
 		NamedUserCount:  pgtype.Int4{Int32: int32(userCount), Valid: true},
 		PrivateUserRate: pgtype.Float8{Float64: privateUserRate, Valid: true},

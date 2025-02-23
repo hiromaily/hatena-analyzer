@@ -17,6 +17,7 @@ type URL struct {
 	ID              int32
 	Address         string
 	CategoryCode    CategoryCode
+	Title           string
 	BookmarkCount   int32
 	NamedUserCount  int32
 	PrivateUserRate float64

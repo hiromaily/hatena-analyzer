@@ -1,7 +1,7 @@
 -- name: GetURLsByURLAddresses :many
 -- @desc: get url information by url address
 SELECT DISTINCT ON (u.url_address)
-  u.url_id, u.url_address, u.category_code, u.bookmark_count, u.named_user_count, u.private_user_rate
+  u.url_id, u.url_address, u.category_code, u.title, u.bookmark_count, u.named_user_count, u.private_user_rate
 FROM
   URLs u
 WHERE
@@ -104,13 +104,13 @@ SELECT url_id FROM URLs WHERE url_address = $1 AND category_code = $2 LIMIT 1;
 
 -- name: UpsertURL :one
 -- @desc: insert url if not existed, update url with is_deleted=false if existed
-INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count, private_user_rate) 
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO URLs (url_address, category_code, title, bookmark_count, named_user_count, private_user_rate) 
+VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (url_address, category_code) 
 DO UPDATE SET
-    bookmark_count = $3,
-    named_user_count = $4,
-    private_user_rate = $5,
+    bookmark_count = $4,
+    named_user_count = $5,
+    private_user_rate = $6,
     is_deleted = FALSE,
     updated_at = EXCLUDED.updated_at 
 RETURNING url_id;
@@ -119,11 +119,12 @@ RETURNING url_id;
 -- @desc: update url with bookmark_count, named_user_count, private_user_rate
 UPDATE URLs
 SET
-    bookmark_count = $1,
-    named_user_count = $2,
-    private_user_rate = $3
+    title = $1,
+    bookmark_count = $2,
+    named_user_count = $3,
+    private_user_rate = $4
 WHERE
-    url_id = $4;
+    url_id = $5;
 
 -- name: InsertURLs :copyfrom
 -- @desc: insert urls if not existed

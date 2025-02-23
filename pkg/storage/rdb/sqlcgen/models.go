@@ -21,6 +21,7 @@ type Url struct {
 	UrlID           int32
 	UrlAddress      string
 	CategoryCode    pgtype.Text
+	Title           pgtype.Text
 	BookmarkCount   pgtype.Int4
 	NamedUserCount  pgtype.Int4
 	PrivateUserRate pgtype.Float8

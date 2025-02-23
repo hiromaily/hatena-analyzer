@@ -215,6 +215,7 @@ func (f *fetchBookmarkUsecase) save(
 			ctx,
 			entityURL.Address,
 			entities.Knowledge,
+			bookmark.Title,
 			bookmark.Count,
 			len(bookmark.Users),
 			entities.PrivateUserRate(bookmark.Count, len(bookmark.Users)),
@@ -242,6 +243,7 @@ func (f *fetchBookmarkUsecase) save(
 		_, err := f.bookmarkRepo.UpdateURL(
 			ctx,
 			entityURL.ID,
+			bookmark.Title,
 			bookmark.Count,
 			len(bookmark.Users),
 			entities.PrivateUserRate(bookmark.Count, len(bookmark.Users)),

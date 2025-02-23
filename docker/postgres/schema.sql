@@ -21,6 +21,7 @@ CREATE TABLE URLs (
     url_id SERIAL PRIMARY KEY,
     url_address VARCHAR(256) NOT NULL,
     category_code VARCHAR(32) DEFAULT 'unknown',
+    title VARCHAR(256) DEFAULT '',
     bookmark_count INT DEFAULT 0,
     named_user_count INT DEFAULT 0,
     private_user_rate FLOAT DEFAULT 0,

@@ -25,6 +25,7 @@ func URLsByURLAddressesToEntityModel(urls []sqlcgen.GetURLsByURLAddressesRow) []
 			ID:              url.UrlID,
 			Address:         url.UrlAddress,
 			CategoryCode:    entities.CategoryCode(url.CategoryCode.String),
+			Title:           url.Title.String,
 			BookmarkCount:   url.BookmarkCount.Int32,
 			NamedUserCount:  url.NamedUserCount.Int32,
 			PrivateUserRate: url.PrivateUserRate.Float64,

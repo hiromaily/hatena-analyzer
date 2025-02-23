@@ -25,12 +25,14 @@ type BookmarkRepositorier interface {
 		ctx context.Context,
 		url string,
 		categoryCode entities.CategoryCode,
+		title string,
 		bmCount, userCount int,
 		privateUserRate float64,
 	) (int32, error)
 	UpdateURL(
 		ctx context.Context,
 		urlID int32,
+		title string,
 		bmCount, userCount int,
 		privateUserRate float64,
 	) (int64, error)
@@ -99,19 +101,21 @@ func (b *bookmarkRepository) UpsertURL(
 	ctx context.Context,
 	url string,
 	categoryCode entities.CategoryCode,
+	title string,
 	bmCount, userCount int,
 	privateUserRate float64,
 ) (int32, error) {
-	return b.postgreQueries.UpsertURL(ctx, url, categoryCode, bmCount, userCount, privateUserRate)
+	return b.postgreQueries.UpsertURL(ctx, url, categoryCode, title, bmCount, userCount, privateUserRate)
 }
 
 func (b *bookmarkRepository) UpdateURL(
 	ctx context.Context,
 	urlID int32,
+	title string,
 	bmCount, userCount int,
 	privateUserRate float64,
 ) (int64, error) {
-	return b.postgreQueries.UpdateURL(ctx, urlID, bmCount, userCount, privateUserRate)
+	return b.postgreQueries.UpdateURL(ctx, urlID, title, bmCount, userCount, privateUserRate)
 }
 
 // func (b *bookmarkRepository) InsertUser(ctx context.Context, userName string) error {

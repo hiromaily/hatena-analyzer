@@ -66,10 +66,8 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 	if err != nil {
 		b.logger.Error(
 			"failed to call bookmarkDetailsRepo.GetURLsByURLAddresses()",
-			"url_count",
-			len(b.urls),
-			"error",
-			err,
+			"url_count", len(b.urls),
+			"error", err,
 		)
 		return err
 	}
@@ -80,10 +78,8 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 		if err != nil {
 			b.logger.Error(
 				"failed to call bookmarkDetailsRepo.GetUsersByURL()",
-				"url",
-				urlModel.Address,
-				"error",
-				err,
+				"url", urlModel.Address,
+				"error", err,
 			)
 			continue
 		}
@@ -107,8 +103,7 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 		newUserRate := float64(count10) / float64(urlModel.NamedUserCount) * 100
 
 		fmt.Println("----------------------------------------------------------------------")
-		// TODO: add title into url table
-		fmt.Printf(" Title: %s,\n URL: %s\n", "dummy", urlModel.Address)
+		fmt.Printf(" Title: %s,\n URL: %s\n", urlModel.Title, urlModel.Address)
 		fmt.Printf(" User's bookmark count / number of users whose bookmark count \n")
 		fmt.Printf("  less 10:      %5d\n", count10)
 		fmt.Printf("  less 100:     %5d\n", count100)
