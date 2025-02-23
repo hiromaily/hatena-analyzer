@@ -5,15 +5,15 @@ import (
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/influxdb"
 	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
 )
 
 type SummaryRepositorier interface {
 	Close(ctx context.Context)
-	ReadEntitySummaries(ctx context.Context, url string) ([]*entities.BookmarkSummary, error)
 	GetAllURLs(ctx context.Context) ([]entities.URL, error)
-	GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error)
+	GetURLsByURLAddresses(ctx context.Context, urls []string) ([]entities.URL, error)
+	// GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error)
+	GetAveragePrivateUserRates(ctx context.Context) ([]entities.AveragePrivateUserRate, error)
 }
 
 //
@@ -21,35 +21,22 @@ type SummaryRepositorier interface {
 //
 
 type summaryRepository struct {
-	logger          logger.Logger
-	postgreQueries  *rdb.PostgreQueries
-	influxDBQueries *influxdb.InfluxDBQueries
+	logger         logger.Logger
+	postgreQueries *rdb.PostgreQueries
 }
 
 func NewSummaryRepository(
 	logger logger.Logger,
 	postgreQueries *rdb.PostgreQueries,
-	influxDBQueries *influxdb.InfluxDBQueries,
 ) *summaryRepository {
 	return &summaryRepository{
-		logger:          logger,
-		postgreQueries:  postgreQueries,
-		influxDBQueries: influxDBQueries,
+		logger:         logger,
+		postgreQueries: postgreQueries,
 	}
 }
 
 func (s *summaryRepository) Close(ctx context.Context) {
 	s.postgreQueries.Close(ctx)
-	s.influxDBQueries.Close(ctx)
-}
-
-// InfluxDB
-
-func (s *summaryRepository) ReadEntitySummaries(
-	ctx context.Context,
-	url string,
-) ([]*entities.BookmarkSummary, error) {
-	return s.influxDBQueries.ReadEntitySummaries(ctx, url)
 }
 
 // PostgreSQL
@@ -58,6 +45,19 @@ func (s *summaryRepository) GetAllURLs(ctx context.Context) ([]entities.URL, err
 	return s.postgreQueries.GetAllURLs(ctx)
 }
 
-func (s *summaryRepository) GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error) {
-	return s.postgreQueries.GetUsersByURL(ctx, url)
+func (s *summaryRepository) GetURLsByURLAddresses(
+	ctx context.Context,
+	urls []string,
+) ([]entities.URL, error) {
+	return s.postgreQueries.GetURLsByURLAddresses(ctx, urls)
+}
+
+// func (s *summaryRepository) GetUsersByURL(ctx context.Context, url string) ([]entities.RDBUser, error) {
+// 	return s.postgreQueries.GetUsersByURL(ctx, url)
+// }
+
+func (s *summaryRepository) GetAveragePrivateUserRates(
+	ctx context.Context,
+) ([]entities.AveragePrivateUserRate, error) {
+	return s.postgreQueries.GetAveragePrivateUserRates(ctx)
 }

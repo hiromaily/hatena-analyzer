@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
@@ -50,14 +51,50 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 	}()
 
 	// get urls from DB if needed
+	var entityURLs []entities.URL
+	var err error
 	if len(s.urls) == 0 {
-		var err error
-		entityURLs, err := s.summaryRepo.GetAllURLs(ctx)
+		entityURLs, err = s.summaryRepo.GetAllURLs(ctx)
 		if err != nil {
 			s.logger.Error("failed to call bookmarkRepo.GetAllURLs()", "error", err)
 			return err
 		}
-		s.urls = entities.FilterURLAddress(entityURLs)
+	} else {
+		entityURLs, err = s.summaryRepo.GetURLsByURLAddresses(ctx, s.urls)
+		if err != nil {
+			s.logger.Error(
+				"failed to call bookmarkDetailsRepo.GetURLsByURLAddresses()",
+				"url_count", len(s.urls),
+				"error", err,
+			)
+			return err
+		}
+	}
+
+	s.logger.Info("url count", "count", len(entityURLs))
+	for _, entityURL := range entityURLs {
+		s.logger.Info(
+			"url info",
+			"url", entityURL.Address,
+			"title", entityURL.Title,
+			"bm_count", entityURL.BookmarkCount,
+			"user_count", entityURL.NamedUserCount,
+			"private_user_rate", entityURL.PrivateUserRate,
+		)
+	}
+
+	fmt.Println("")
+	averageRates, err := s.summaryRepo.GetAveragePrivateUserRates(ctx)
+	if err != nil {
+		s.logger.Error("failed to call summaryRepo.GetAveragePrivateUserRates()", "error", err)
+		return err
+	}
+	for _, ave := range averageRates {
+		s.logger.Info(
+			"average private user rate",
+			"ave", ave.CategoryCode.String(),
+			"average_private_user_rate", ave.AveragePrivateUserRate,
+		)
 	}
 
 	return nil

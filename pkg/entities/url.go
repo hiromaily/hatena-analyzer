@@ -22,3 +22,8 @@ type URL struct {
 	NamedUserCount  int32
 	PrivateUserRate float64
 }
+
+type AveragePrivateUserRate struct {
+	CategoryCode           CategoryCode
+	AveragePrivateUserRate float64
+}

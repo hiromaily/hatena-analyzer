@@ -270,7 +270,6 @@ func (r *registry) newSummaryRepository() repository.SummaryRepositorier {
 		r.summaryRepo = repository.NewSummaryRepository(
 			r.newLogger(),
 			r.newPostgresQueries(),
-			r.newInfluxDBQueries(),
 		)
 	}
 	return r.summaryRepo

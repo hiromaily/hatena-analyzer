@@ -165,7 +165,7 @@ DO UPDATE SET
     updated_at = EXCLUDED.updated_at;
 
 -- name: GetBookmarkedUsersURLCounts :many
--- @desc: Count each user's bookmarked urls
+-- @desc: Not used. Count each user's bookmarked urls
 SELECT 
     user_id, COUNT(user_id) AS url_count
 FROM 
@@ -178,7 +178,7 @@ ORDER BY
     url_count DESC;
 
 -- name: CountGetBookmarkedUsersURLCounts :one
--- @desc: Count target that each user's bookmarked urls
+-- @desc: Not used. Count target that each user's bookmarked urls
 SELECT
   COUNT(*)
 FROM

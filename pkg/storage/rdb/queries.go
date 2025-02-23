@@ -172,6 +172,23 @@ func (p *PostgreQueries) InsertURLs(
 	return queries.InsertURLs(ctx, params)
 }
 
+func (p *PostgreQueries) GetAveragePrivateUserRates(
+	ctx context.Context,
+) ([]entities.AveragePrivateUserRate, error) {
+	queries, release, err := p.rdbClient.GetQueries(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
+	averageRow, err := queries.GetAveragePrivateUserRates(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// convert to entity models
+	return adapter.AveragePrivateUserRatesToEntityModel(averageRow), nil
+}
+
 //
 // users
 //

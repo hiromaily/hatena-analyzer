@@ -39,6 +39,19 @@ func URLsByURLAddressesToEntityModel(urls []sqlcgen.GetURLsByURLAddressesRow) []
 	return urlModels
 }
 
+func AveragePrivateUserRatesToEntityModel(
+	averagePrivateUserRates []sqlcgen.GetAveragePrivateUserRatesRow,
+) []entities.AveragePrivateUserRate {
+	var models []entities.AveragePrivateUserRate
+	for _, ave := range averagePrivateUserRates {
+		models = append(models, entities.AveragePrivateUserRate{
+			CategoryCode:           entities.CategoryCode(ave.CategoryCode.String),
+			AveragePrivateUserRate: ave.AveragePrivateUserRate,
+		})
+	}
+	return models
+}
+
 func CreateInsertURLsParams(category string, urls []string) []sqlcgen.InsertURLsParams {
 	var params []sqlcgen.InsertURLsParams
 	pgtextCategory := pgtype.Text{
