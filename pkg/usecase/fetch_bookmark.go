@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
+	"golang.org/x/sync/semaphore"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
@@ -22,6 +25,7 @@ type fetchBookmarkUsecase struct {
 	tracer            tracer.Tracer
 	bookmarkRepo      repository.BookmarkRepositorier
 	entityJSONFetcher fetcher.EntityJSONFetcher
+	maxWorker         int64 // for semaphore
 	urls              []string
 }
 
@@ -34,15 +38,20 @@ func NewFetchBookmarkUsecase(
 	tracer tracer.Tracer,
 	bookmarkRepo repository.BookmarkRepositorier,
 	entityJSONFetcher fetcher.EntityJSONFetcher,
+	maxWorker int64,
 	urls []string,
 ) (*fetchBookmarkUsecase, error) {
 	// validation
+	if maxWorker == 0 {
+		return nil, errors.New("maxWorker is 0")
+	}
 
 	return &fetchBookmarkUsecase{
 		logger:            logger,
 		tracer:            tracer,
 		bookmarkRepo:      bookmarkRepo,
 		entityJSONFetcher: entityJSONFetcher,
+		maxWorker:         maxWorker,
 		urls:              urls,
 	}, nil
 }
@@ -68,64 +77,90 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 			f.logger.Error("failed to call bookmarkRepo.GetAllURLs()", "error", err)
 			return err
 		}
-		// f.urls = entities.FilterURLAddress(entityURLs)
-		// isDBURLs = true
 	} else {
 		for _, url := range f.urls {
 			entityURLs = append(entityURLs, entities.URLIDAddress{Address: url})
 		}
 	}
 
+	return f.concurrentExecuter(ctx, entityURLs)
+}
+
+func (f *fetchBookmarkUsecase) concurrentExecuter(
+	ctx context.Context,
+	entityURLs []entities.URLIDAddress,
+) error {
+	sem := semaphore.NewWeighted(f.maxWorker)
+	var wg sync.WaitGroup
+
+	f.logger.Info("start concurrentExecuter", "max_worker", f.maxWorker, "url_count", len(entityURLs))
+
 	for _, entityURL := range entityURLs {
-		// load existing bookmark data from DB
-		existingBookmark, err := f.load(ctx, entityURL.Address)
-		if err != nil {
-			continue
+		wg.Add(1)
+
+		// get semaphore
+		if err := sem.Acquire(ctx, 1); err != nil {
+			f.logger.Warn("failed to acquire semaphore", "error", err)
+			break
 		}
 
-		// set isDeleted = `true` on existingBookmark.Users
-		for userName := range existingBookmark.Users {
-			existingBookmark.Users[userName] = entities.BookmarkUser{
-				Name:        userName,
-				IsDeleted:   true,
-				IsCommented: existingBookmark.Users[userName].IsCommented,
+		go func(entityURL entities.URLIDAddress) {
+			defer func() {
+				wg.Done()
+				sem.Release(1)
+			}()
+
+			// load existing bookmark data from DB
+			existingBookmark, err := f.load(ctx, entityURL.Address)
+			if err != nil {
+				return
 			}
-		}
 
-		// retrieve latest data from URL
-		newBookmark, err := f.fetch(ctx, entityURL.Address)
-		if err != nil {
-			continue
-		}
-
-		// update existingBookmark to save
-		existingBookmark.Title = newBookmark.Title
-		existingBookmark.Count = newBookmark.Count
-		existingBookmark.Timestamp = newBookmark.Timestamp
-		// overwrite `isDeleted` with `false` if user is still exist
-		for userName, user := range newBookmark.Users {
-			existingBookmark.Users[userName] = entities.BookmarkUser{
-				Name:        userName,
-				IsDeleted:   false,
-				IsCommented: user.IsCommented,
+			// set isDeleted = `true` on existingBookmark.Users
+			for userName := range existingBookmark.Users {
+				existingBookmark.Users[userName] = entities.BookmarkUser{
+					Name:        userName,
+					IsDeleted:   true,
+					IsCommented: existingBookmark.Users[userName].IsCommented,
+				}
 			}
-		}
-		f.logger.Info("bookmark entity will be stored",
-			"url", entityURL.Address,
-			"newBookmark.Title", existingBookmark.Title,
-			"newBookmark.Count", existingBookmark.Count,
-			"newBookmark.User.Length", len(existingBookmark.Users),
-		)
 
-		// save data
-		err = f.save(ctx, &entityURL, existingBookmark)
-		if err != nil {
-			continue
-		}
+			// retrieve latest data from URL
+			newBookmark, err := f.fetch(ctx, entityURL.Address)
+			if err != nil {
+				return
+			}
 
-		// Print data
-		f.print(existingBookmark)
+			// update existingBookmark to save
+			existingBookmark.Title = newBookmark.Title
+			existingBookmark.Count = newBookmark.Count
+			existingBookmark.Timestamp = newBookmark.Timestamp
+			// overwrite `isDeleted` with `false` if user is still exist
+			for userName, user := range newBookmark.Users {
+				existingBookmark.Users[userName] = entities.BookmarkUser{
+					Name:        userName,
+					IsDeleted:   false,
+					IsCommented: user.IsCommented,
+				}
+			}
+			f.logger.Info("bookmark entity will be stored",
+				"url", entityURL.Address,
+				"newBookmark.Title", existingBookmark.Title,
+				"newBookmark.Count", existingBookmark.Count,
+				"newBookmark.User.Length", len(existingBookmark.Users),
+			)
+
+			// save data
+			err = f.save(ctx, &entityURL, existingBookmark)
+			if err != nil {
+				return
+			}
+
+			// Print data
+			f.print(existingBookmark)
+		}(entityURL)
 	}
+	wg.Wait()
 
 	return nil
 }

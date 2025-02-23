@@ -105,11 +105,11 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 		fmt.Println("----------------------------------------------------------------------")
 		fmt.Printf(" Title: %s,\n URL: %s\n", urlModel.Title, urlModel.Address)
 		fmt.Printf(" User's bookmark count / number of users whose bookmark count \n")
-		fmt.Printf("  less 10:      %5d\n", count10)
-		fmt.Printf("  less 100:     %5d\n", count100)
-		fmt.Printf("  less 1000:    %5d\n", count1000)
-		fmt.Printf("  less 10000:   %5d\n", count10000)
-		fmt.Printf("  over 10000:   %5d\n", countOver)
+		fmt.Printf(" - less 10:      %5d\n", count10)
+		fmt.Printf(" - less 100:     %5d\n", count100)
+		fmt.Printf(" - less 1000:    %5d\n", count1000)
+		fmt.Printf(" - less 10000:   %5d\n", count10000)
+		fmt.Printf(" - over 10000:   %5d\n", countOver)
 		fmt.Printf(" New user rate:  %.1f\n", newUserRate)
 	}
 

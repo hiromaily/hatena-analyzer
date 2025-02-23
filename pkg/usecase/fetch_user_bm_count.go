@@ -118,5 +118,7 @@ func (f *fetchUserBookmarkCountUsecase) concurrentExecuter(ctx context.Context, 
 			}
 		}(userName)
 	}
+	wg.Wait()
+
 	return nil
 }

@@ -92,5 +92,8 @@ view-summary:
 	go run ./cmd/fake-detector/ view-summary
 
 # Run all executions
-.PHONY: run-all
-run-all: fetch-page-urls fetch-bookmark view-summary
+.PHONY: fetch-all
+fetch-all: fetch-page-urls fetch-bookmark fetch-user-bm-count
+
+.PHONY: view-all
+view-all: view-timeseries view-bookmark-details view-summary

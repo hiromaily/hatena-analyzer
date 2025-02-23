@@ -166,6 +166,7 @@ func (r *registry) newFetchBookmarkUsecase() usecase.FetchBookmarkUsecaser {
 		r.newTracer(r.appCode.String()),
 		r.newBookmarkRepository(),
 		r.newBookmarkFetcher(),
+		r.envConf.MaxWorkers, // maxWorker
 		r.urls,
 	)
 	if err != nil {
