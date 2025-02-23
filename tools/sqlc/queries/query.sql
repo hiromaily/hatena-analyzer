@@ -93,16 +93,28 @@ RETURNING
   user_id;
 
 -- name: InsertURL :one
--- @desc: insert url if not existed and return url_id
+-- @desc: Deprecated. insert url if not existed and return url_id
 WITH insert_result AS (
-	INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count)
-	VALUES ($1, $2, $3, $4)
+	INSERT INTO URLs (url_address, category_code)
+	VALUES ($1, $2)
 	ON CONFLICT (url_address, category_code) DO NOTHING
 	RETURNING url_id
 )
 SELECT url_id FROM insert_result
 UNION ALL
 SELECT url_id FROM URLs WHERE url_address = $1 AND category_code = $2 LIMIT 1;
+
+-- name: InsertURLs :copyfrom
+-- @desc: Deprecated. insert urls if not existed
+INSERT INTO
+  URLs (url_address, category_code)
+VALUES
+  ($1, $2);
+
+-- name: BulkInsertUrls :exec
+-- @desc: insert urls by stored procedure. conflicts must be ignored. arg1: array of urls, arg2: array of category.
+-- name: BulkInsertURLs :exec
+CALL bulk_insert_urls($1, $2);
 
 -- name: UpsertURL :one
 -- @desc: insert url if not existed, update url with is_deleted=false if existed
@@ -127,13 +139,6 @@ SET
     private_user_rate = $4
 WHERE
     url_id = $5;
-
--- name: InsertURLs :copyfrom
--- @desc: insert urls if not existed
-INSERT INTO
-  URLs (url_address, category_code)
-VALUES
-  ($1, $2);
 
 -- name: InsertUser :one
 -- @desc: Deprecated!!! insert user if not existed and return user_id

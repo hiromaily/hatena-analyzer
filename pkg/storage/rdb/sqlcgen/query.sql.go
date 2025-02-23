@@ -11,6 +11,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const bulkInsertUrls = `-- name: BulkInsertUrls :exec
+CALL bulk_insert_urls($1, $2)
+`
+
+type BulkInsertUrlsParams struct {
+	BulkInsertUrls   interface{}
+	BulkInsertUrls_2 interface{}
+}
+
+// @desc: insert urls by stored procedure. conflicts must be ignored. arg1: array of urls, arg2: array of category.
+func (q *Queries) BulkInsertUrls(ctx context.Context, arg BulkInsertUrlsParams) error {
+	_, err := q.db.Exec(ctx, bulkInsertUrls, arg.BulkInsertUrls, arg.BulkInsertUrls_2)
+	return err
+}
+
 const countGetBookmarkedUsersURLCounts = `-- name: CountGetBookmarkedUsersURLCounts :one
 SELECT
   COUNT(*)
@@ -30,7 +45,7 @@ FROM
   ) AS subquery
 `
 
-// @desc: Count target that each user's bookmarked urls
+// @desc: Not used. Count target that each user's bookmarked urls
 func (q *Queries) CountGetBookmarkedUsersURLCounts(ctx context.Context) (int64, error) {
 	row := q.db.QueryRow(ctx, countGetBookmarkedUsersURLCounts)
 	var count int64
@@ -143,7 +158,7 @@ type GetBookmarkedUsersURLCountsRow struct {
 	UrlCount int64
 }
 
-// @desc: Count each user's bookmarked urls
+// @desc: Not used. Count each user's bookmarked urls
 func (q *Queries) GetBookmarkedUsersURLCounts(ctx context.Context) ([]GetBookmarkedUsersURLCountsRow, error) {
 	rows, err := q.db.Query(ctx, getBookmarkedUsersURLCounts)
 	if err != nil {
@@ -377,8 +392,8 @@ func (q *Queries) GetUsersByURL(ctx context.Context, urlAddress string) ([]GetUs
 
 const insertURL = `-- name: InsertURL :one
 WITH insert_result AS (
-	INSERT INTO URLs (url_address, category_code, bookmark_count, named_user_count)
-	VALUES ($1, $2, $3, $4)
+	INSERT INTO URLs (url_address, category_code)
+	VALUES ($1, $2)
 	ON CONFLICT (url_address, category_code) DO NOTHING
 	RETURNING url_id
 )
@@ -388,20 +403,13 @@ SELECT url_id FROM URLs WHERE url_address = $1 AND category_code = $2 LIMIT 1
 `
 
 type InsertURLParams struct {
-	UrlAddress     string
-	CategoryCode   pgtype.Text
-	BookmarkCount  pgtype.Int4
-	NamedUserCount pgtype.Int4
+	UrlAddress   string
+	CategoryCode pgtype.Text
 }
 
-// @desc: insert url if not existed and return url_id
+// @desc: Deprecated. insert url if not existed and return url_id
 func (q *Queries) InsertURL(ctx context.Context, arg InsertURLParams) (int32, error) {
-	row := q.db.QueryRow(ctx, insertURL,
-		arg.UrlAddress,
-		arg.CategoryCode,
-		arg.BookmarkCount,
-		arg.NamedUserCount,
-	)
+	row := q.db.QueryRow(ctx, insertURL, arg.UrlAddress, arg.CategoryCode)
 	var url_id int32
 	err := row.Scan(&url_id)
 	return url_id, err

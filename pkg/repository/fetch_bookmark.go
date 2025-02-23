@@ -14,13 +14,13 @@ type FetchBookmarkRepositorier interface {
 	Close(ctx context.Context)
 	// PostgreSQL
 	GetAllURLs(ctx context.Context) ([]entities.URL, error)
-	GetURLID(ctx context.Context, url string) (int32, error)
-	InsertURL(
-		ctx context.Context,
-		url string,
-		categoryCode entities.CategoryCode,
-		bmCount, userCount int,
-	) (int32, error)
+	// GetURLID(ctx context.Context, url string) (int32, error)
+	// InsertURL(
+	// 	ctx context.Context,
+	// 	url string,
+	// 	categoryCode entities.CategoryCode,
+	// 	bmCount, userCount int,
+	// ) (int32, error)
 	UpsertURL(
 		ctx context.Context,
 		url string,
@@ -84,18 +84,18 @@ func (f *fetchBookmarkRepository) GetAllURLs(ctx context.Context) ([]entities.UR
 	return f.postgreQueries.GetAllURLs(ctx)
 }
 
-func (f *fetchBookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
-	return f.postgreQueries.GetURLID(ctx, url)
-}
+// func (f *fetchBookmarkRepository) GetURLID(ctx context.Context, url string) (int32, error) {
+// 	return f.postgreQueries.GetURLID(ctx, url)
+// }
 
-func (f *fetchBookmarkRepository) InsertURL(
-	ctx context.Context,
-	url string,
-	categoryCode entities.CategoryCode,
-	bmCount, userCount int,
-) (int32, error) {
-	return f.postgreQueries.InsertURL(ctx, url, categoryCode, bmCount, userCount)
-}
+// func (f *fetchBookmarkRepository) InsertURL(
+// 	ctx context.Context,
+// 	url string,
+// 	categoryCode entities.CategoryCode,
+// 	bmCount, userCount int,
+// ) (int32, error) {
+// 	return f.postgreQueries.InsertURL(ctx, url, categoryCode, bmCount, userCount)
+// }
 
 func (f *fetchBookmarkRepository) UpsertURL(
 	ctx context.Context,

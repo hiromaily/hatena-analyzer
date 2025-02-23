@@ -275,6 +275,7 @@ func (f *fetchBookmarkUsecase) save(
 		entityURL.ID = urlID
 	} else {
 		// update by urlID
+		// TODO: change to update by urlAddress ??
 		_, err := f.bookmarkRepo.UpdateURL(
 			ctx,
 			entityURL.ID,

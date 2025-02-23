@@ -25,9 +25,18 @@ func (c CategoryCode) String() string {
 	return string(c)
 }
 
+func (c CategoryCode) Bulk(length int) []CategoryCode {
+	categories := make([]CategoryCode, 0, length)
+	for range length {
+		categories = append(categories, c)
+	}
+	return categories
+}
+
+// return categories without all, unknown
 func GetCategoryCodeList() []CategoryCode {
 	return []CategoryCode{
-		All, General, Social, Economics, Life, Knowledge, IT, Fun, Entertainment, Game,
+		General, Social, Economics, Life, Knowledge, IT, Fun, Entertainment, Game,
 	}
 }
 

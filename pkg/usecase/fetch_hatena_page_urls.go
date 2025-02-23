@@ -26,8 +26,7 @@ type fetchHatenaPageURLsUsecase struct {
 // TODO
 // - add cli parameter: category_code
 // - fetch urls concurrently
-// - add stored procedure to avoid conflict error
-//   - fix: duplicate key value violates unique constraint "urls_url_address_key" (SQLSTATE 23505)
+// - fetch `all` category url with page's category
 // - add test
 
 func NewFetchHatenaPageURLsUsecase(
@@ -62,6 +61,7 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 
 	targetURLs := []string{}
 	if f.categoryCode == entities.Unknown {
+		// fetch all categories except `all: 総合`
 		categoryCodes := entities.GetCategoryCodeList()
 		for _, code := range categoryCodes {
 			targetURLs = append(
@@ -94,10 +94,12 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 		}
 
 		// Insert fetched URLs to DB
-		// FIXME: duplicate key value violates unique constraint "urls_url_address_key" (SQLSTATE 23505)
-		// TODO: create stored procedure to avoid conflict error
+		// FIXED: duplicate key value violates unique constraint "urls_url_address_key" (SQLSTATE 23505)
 		f.logger.Info("insert urls", "category", category.String(), "url_count", len(pageURLs))
-		if err := f.fetchURLRepo.InsertURLs(ctx, category, pageURLs); err != nil {
+		// if err := f.fetchURLRepo.InsertURLs(ctx, category, pageURLs); err != nil {
+		// 	f.logger.Error("failed to insert URLs", "category", category.String(), "error", err)
+		// }
+		if err := f.fetchURLRepo.CallBulkInsertURLs(ctx, pageURLs, category.Bulk(len(pageURLs))); err != nil {
 			f.logger.Error("failed to insert URLs", "category", category.String(), "error", err)
 		}
 		totalFetchedURLs = append(totalFetchedURLs, pageURLs...)

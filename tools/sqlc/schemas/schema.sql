@@ -19,16 +19,16 @@ CREATE TABLE Categories (
 
 CREATE TABLE URLs (
     url_id SERIAL PRIMARY KEY,
-    url_address VARCHAR(256) NOT NULL,
+    url_address VARCHAR(256) NOT NULL UNIQUE,
     category_code VARCHAR(32) DEFAULT 'unknown',
+    is_all BOOLEAN DEFAULT FALSE,
     title VARCHAR(256) DEFAULT '',
     bookmark_count INT DEFAULT 0,
     named_user_count INT DEFAULT 0,
     private_user_rate FLOAT DEFAULT 0,
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT url_address_category_code_unique UNIQUE(url_address, category_code)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE UserURLs (

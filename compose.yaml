@@ -13,6 +13,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./docker/postgres/stored.sql:/docker-entrypoint-initdb.d/stored.sql
       - ./docker/postgres/tdata.sql:/docker-entrypoint-initdb.d/tdata.sql
 
   mongo:

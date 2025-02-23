@@ -38,7 +38,7 @@ func (r iteratorForInsertURLs) Err() error {
 	return nil
 }
 
-// @desc: insert urls if not existed
+// @desc: Deprecated. insert urls if not existed
 func (q *Queries) InsertURLs(ctx context.Context, arg []InsertURLsParams) (int64, error) {
 	return q.db.CopyFrom(ctx, []string{"urls"}, []string{"url_address", "category_code"}, &iteratorForInsertURLs{rows: arg})
 }

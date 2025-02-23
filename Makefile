@@ -41,7 +41,6 @@ lint-fix: linecheck
 .PHONY: copy-query
 copy-query:
 	cp ./docker/postgres/schema.sql ./tools/sqlc/schemas/
-	cp ./docker/postgres/stored.sql ./tools/sqlc/schemas/
 
 .PHONY: gen-db-code
 gen-db-code: clean-sqlc-gen-code
