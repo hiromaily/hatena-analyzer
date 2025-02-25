@@ -245,11 +245,13 @@ func (f *fetchBookmarkUsecase) save(
 	}
 
 	// Upsert URL to PostgreSQL DB
-	if entityURL.ID == 0 { // url comes from environment variable
+	if entityURL.ID == 0 {
+		// url comes from environment variable
+		// FIXME: ERROR: there is no unique or exclusion constraint matching the ON CONFLICT specification (SQLSTATE 42P10)
+
 		urlID, err := f.bookmarkRepo.UpsertURL(
 			ctx,
 			entityURL.Address,
-			entities.Knowledge,
 			bookmark.Title,
 			bookmark.Count,
 			len(bookmark.Users),

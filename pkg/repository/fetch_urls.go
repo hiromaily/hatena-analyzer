@@ -10,7 +10,7 @@ import (
 
 type FetchURLRepositorier interface {
 	Close(ctx context.Context) error
-	//InsertURLs(ctx context.Context, category entities.CategoryCode, urls []string) error
+	// InsertURLs(ctx context.Context, category entities.CategoryCode, urls []string) error
 	CallBulkInsertURLs(ctx context.Context, urls []string, categories []entities.CategoryCode) error
 }
 

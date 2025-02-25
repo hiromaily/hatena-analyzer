@@ -24,7 +24,6 @@ type FetchBookmarkRepositorier interface {
 	UpsertURL(
 		ctx context.Context,
 		url string,
-		categoryCode entities.CategoryCode,
 		title string,
 		bmCount, userCount int,
 		privateUserRate float64,
@@ -100,12 +99,11 @@ func (f *fetchBookmarkRepository) GetAllURLs(ctx context.Context) ([]entities.UR
 func (f *fetchBookmarkRepository) UpsertURL(
 	ctx context.Context,
 	url string,
-	categoryCode entities.CategoryCode,
 	title string,
 	bmCount, userCount int,
 	privateUserRate float64,
 ) (int32, error) {
-	return f.postgreQueries.UpsertURL(ctx, url, categoryCode, title, bmCount, userCount, privateUserRate)
+	return f.postgreQueries.UpsertURL(ctx, url, title, bmCount, userCount, privateUserRate)
 }
 
 func (f *fetchBookmarkRepository) UpdateURL(

@@ -179,6 +179,56 @@ func (q *Queries) GetBookmarkedUsersURLCounts(ctx context.Context) ([]GetBookmar
 	return items, nil
 }
 
+const getURLsByPrivateRate = `-- name: GetURLsByPrivateRate :many
+SELECT
+  u.url_id, u.url_address, u.category_code, u.title, u.bookmark_count, u.named_user_count, u.private_user_rate
+FROM 
+  URLs u
+WHERE 
+  private_user_rate >= $1 
+ORDER BY 
+  private_user_rate DESC
+`
+
+type GetURLsByPrivateRateRow struct {
+	UrlID           int32
+	UrlAddress      string
+	CategoryCode    pgtype.Text
+	Title           pgtype.Text
+	BookmarkCount   pgtype.Int4
+	NamedUserCount  pgtype.Int4
+	PrivateUserRate pgtype.Float8
+}
+
+// @desc: get urls by private_user_rate
+func (q *Queries) GetURLsByPrivateRate(ctx context.Context, privateUserRate pgtype.Float8) ([]GetURLsByPrivateRateRow, error) {
+	rows, err := q.db.Query(ctx, getURLsByPrivateRate, privateUserRate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetURLsByPrivateRateRow
+	for rows.Next() {
+		var i GetURLsByPrivateRateRow
+		if err := rows.Scan(
+			&i.UrlID,
+			&i.UrlAddress,
+			&i.CategoryCode,
+			&i.Title,
+			&i.BookmarkCount,
+			&i.NamedUserCount,
+			&i.PrivateUserRate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getURLsByURLAddresses = `-- name: GetURLsByURLAddresses :many
 SELECT DISTINCT ON (u.url_address)
   u.url_id, u.url_address, u.category_code, u.title, u.bookmark_count, u.named_user_count, u.private_user_rate
@@ -494,13 +544,13 @@ func (q *Queries) UpdateUserBookmarkCount(ctx context.Context, arg UpdateUserBoo
 }
 
 const upsertURL = `-- name: UpsertURL :one
-INSERT INTO URLs (url_address, category_code, title, bookmark_count, named_user_count, private_user_rate) 
-VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (url_address, category_code) 
+INSERT INTO URLs (url_address, title, bookmark_count, named_user_count, private_user_rate) 
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (url_address) 
 DO UPDATE SET
-    bookmark_count = $4,
-    named_user_count = $5,
-    private_user_rate = $6,
+    bookmark_count = $3,
+    named_user_count = $4,
+    private_user_rate = $5,
     is_deleted = FALSE,
     updated_at = EXCLUDED.updated_at 
 RETURNING url_id
@@ -508,7 +558,6 @@ RETURNING url_id
 
 type UpsertURLParams struct {
 	UrlAddress      string
-	CategoryCode    pgtype.Text
 	Title           pgtype.Text
 	BookmarkCount   pgtype.Int4
 	NamedUserCount  pgtype.Int4
@@ -519,7 +568,6 @@ type UpsertURLParams struct {
 func (q *Queries) UpsertURL(ctx context.Context, arg UpsertURLParams) (int32, error) {
 	row := q.db.QueryRow(ctx, upsertURL,
 		arg.UrlAddress,
-		arg.CategoryCode,
 		arg.Title,
 		arg.BookmarkCount,
 		arg.NamedUserCount,

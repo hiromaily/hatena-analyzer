@@ -31,6 +31,18 @@ FROM
 WHERE
   u.url_address = $1;
 
+-- name: GetURLsByPrivateRate :many
+-- @desc: get urls by private_user_rate
+SELECT
+  u.url_id, u.url_address, u.category_code, u.title, u.bookmark_count, u.named_user_count, u.private_user_rate
+FROM 
+  URLs u
+WHERE 
+  private_user_rate >= $1 
+ORDER BY 
+  private_user_rate DESC;
+
+
 -- name: GetUserNames :many
 -- @desc: get users
 SELECT
@@ -118,13 +130,13 @@ CALL bulk_insert_urls($1, $2);
 
 -- name: UpsertURL :one
 -- @desc: insert url if not existed, update url with is_deleted=false if existed
-INSERT INTO URLs (url_address, category_code, title, bookmark_count, named_user_count, private_user_rate) 
-VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT (url_address, category_code) 
+INSERT INTO URLs (url_address, title, bookmark_count, named_user_count, private_user_rate) 
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (url_address) 
 DO UPDATE SET
-    bookmark_count = $4,
-    named_user_count = $5,
-    private_user_rate = $6,
+    bookmark_count = $3,
+    named_user_count = $4,
+    private_user_rate = $5,
     is_deleted = FALSE,
     updated_at = EXCLUDED.updated_at 
 RETURNING url_id;
