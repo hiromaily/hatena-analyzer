@@ -69,12 +69,13 @@ fetch-page-urls:
 .PHONY: fetch-bookmark
 fetch-bookmark:
 	go run ./cmd/fake-detector/ fetch-bookmark
-	#go run ./cmd/fake-detector/ fetch-bookmark --urls=https://www.google.co.jp/,https://chatgpt.com/
+	#go run ./cmd/fake-detector/ fetch-bookmark --urls=https://www.google.co.jp/,https://chatgpt.com/ --verbose
 
 # Fetch user's bookmark count
 .PHONY: fetch-user-bm-count
 fetch-user-bm-count:
 	go run ./cmd/fake-detector/ fetch-user-bm-count
+	#go run ./cmd/fake-detector/ fetch-user-bm-count --urls=https://www.google.co.jp/,https://chatgpt.com/
 
 # View time series of bookmarked entity
 # urls [env: URLS] are required to run 

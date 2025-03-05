@@ -10,8 +10,9 @@ import (
 
 type SubCommand struct{}
 
-type FetchBookmarkSubCommand struct {
-	URLs string `arg:"--urls"` // e.g. https://www.google.co.jp/,https://chatgpt.com/
+type SubCommandWithURLs struct {
+	URLs    string `arg:"--urls"` // e.g. https://www.google.co.jp/,https://chatgpt.com/
+	Verbose bool   `args:"--verbose"`
 }
 
 type Args struct {
@@ -21,9 +22,9 @@ type Args struct {
 	// fetch URLs from hatena pages
 	FetchHatenaPageURLsCommand *SubCommand `arg:"subcommand:fetch-hatena-page-urls"`
 	// fetch bookmark entity from bookmark url
-	FetchBookmarkEntitiesCommand *FetchBookmarkSubCommand `arg:"subcommand:fetch-bookmark"`
+	FetchBookmarkEntitiesCommand *SubCommandWithURLs `arg:"subcommand:fetch-bookmark"`
 	// fetch user bookmark count from bookmark url
-	FetchUserBookmarkCountCommand *SubCommand `arg:"subcommand:fetch-user-bm-count"`
+	FetchUserBookmarkCountCommand *SubCommandWithURLs `arg:"subcommand:fetch-user-bm-count"`
 	// view time series of bookmark
 	ViewTimeSeriesCommand *SubCommand `arg:"subcommand:view-time-series"`
 	// view bookmark details

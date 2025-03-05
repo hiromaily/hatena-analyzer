@@ -27,6 +27,7 @@ type fetchBookmarkUsecase struct {
 	entityJSONFetcher fetcher.EntityJSONFetcher
 	maxWorker         int64 // for semaphore
 	urls              []string
+	isVerbose         bool
 }
 
 // TODO
@@ -40,6 +41,7 @@ func NewFetchBookmarkUsecase(
 	entityJSONFetcher fetcher.EntityJSONFetcher,
 	maxWorker int64,
 	urls []string,
+	isVerbose bool,
 ) (*fetchBookmarkUsecase, error) {
 	// validation
 	if maxWorker == 0 {
@@ -53,6 +55,7 @@ func NewFetchBookmarkUsecase(
 		entityJSONFetcher: entityJSONFetcher,
 		maxWorker:         maxWorker,
 		urls:              urls,
+		isVerbose:         isVerbose,
 	}, nil
 }
 
@@ -158,7 +161,9 @@ func (f *fetchBookmarkUsecase) concurrentExecuter(
 			}
 
 			// Print data
-			f.print(existingBookmark)
+			if f.isVerbose {
+				f.print(existingBookmark)
+			}
 		}(entityURL)
 	}
 	wg.Wait()

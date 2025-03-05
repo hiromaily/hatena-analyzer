@@ -130,11 +130,20 @@ func (r *registry) newFetchBookmarkHandler() handler.Handler {
 		urls = strings.Split(r.args.FetchBookmarkEntitiesCommand.URLs, ",")
 		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
 	}
-	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase(urls))
+	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase(urls, r.args.FetchBookmarkEntitiesCommand.Verbose))
 }
 
 func (r *registry) newFetchUserBookmarkCountHandler() handler.Handler {
-	return handler.NewFetchUserBookmarkCountCLIHandler(r.newLogger(), r.newFetchUserBookmarkCountUsecase())
+	// retrieve args
+	var urls []string
+	if r.args.FetchUserBookmarkCountCommand.URLs != "" {
+		urls = strings.Split(r.args.FetchUserBookmarkCountCommand.URLs, ",")
+		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
+	}
+	return handler.NewFetchUserBookmarkCountCLIHandler(
+		r.newLogger(),
+		r.newFetchUserBookmarkCountUsecase(urls),
+	)
 }
 
 func (r *registry) newViewTimeSeriesHanlder() handler.Handler {
@@ -169,7 +178,7 @@ func (r *registry) newFetchHatenaPageURLsUsecase() usecase.FetchHatenaPageURLsUs
 	return usecase
 }
 
-func (r *registry) newFetchBookmarkUsecase(urls []string) usecase.FetchBookmarkUsecaser {
+func (r *registry) newFetchBookmarkUsecase(urls []string, isVerbose bool) usecase.FetchBookmarkUsecaser {
 	usecase, err := usecase.NewFetchBookmarkUsecase(
 		r.newLogger(),
 		r.newTracer(r.appCode.String()),
@@ -177,6 +186,7 @@ func (r *registry) newFetchBookmarkUsecase(urls []string) usecase.FetchBookmarkU
 		r.newBookmarkFetcher(),
 		r.envConf.MaxWorkers, // maxWorker
 		urls,
+		isVerbose,
 	)
 	if err != nil {
 		panic(err)
@@ -224,14 +234,14 @@ func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
 	return usecase
 }
 
-func (r *registry) newFetchUserBookmarkCountUsecase() usecase.FetchUserBookmarkCountUsecaser {
+func (r *registry) newFetchUserBookmarkCountUsecase(urls []string) usecase.FetchUserBookmarkCountUsecaser {
 	usecase, err := usecase.NewFetchUserBookmarkCountUsecase(
 		r.newLogger(),
 		r.newTracer(r.appCode.String()),
 		r.newUserRepository(),
 		r.newUserBookmarkCountFetcher(),
 		r.envConf.MaxWorkers, // maxWorker
-		r.urls,
+		urls,
 	)
 	if err != nil {
 		panic(err)
