@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/pingcap/errors"
+
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 )
@@ -50,6 +52,11 @@ func (e *entityJSONFetcher) Fetch(ctx context.Context, url string) (*entities.Bo
 	var data Data
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return nil, err
+	}
+
+	// validation
+	if data.Title == "" {
+		return nil, errors.New("entity is not found")
 	}
 
 	users := make(map[string]entities.BookmarkUser)

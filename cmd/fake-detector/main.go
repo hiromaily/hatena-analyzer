@@ -35,7 +35,7 @@ func main() {
 	}
 
 	// Register for initialization of dependencies
-	reg := registry.NewRegistry(&cfg, appCode, CommitID, args.URLs)
+	reg := registry.NewRegistry(&cfg, appCode, CommitID, args)
 	app, err := reg.InitializeApp()
 	if err != nil {
 		panic(err)

@@ -59,14 +59,17 @@ gen-db-all: copy-query gen-db-code
 #------------------------------------------------------------------------------
 
 # Fetch page urls from the Hatena pages
+# no args
 .PHONY: fetch-page-urls
 fetch-page-urls:
 	go run ./cmd/fake-detector/ fetch-hatena-page-urls
 
 # Fetch bookmark users, title, count from page of given URL and save data to DB
+
 .PHONY: fetch-bookmark
 fetch-bookmark:
 	go run ./cmd/fake-detector/ fetch-bookmark
+	#go run ./cmd/fake-detector/ fetch-bookmark --urls=https://www.google.co.jp/,https://chatgpt.com/
 
 # Fetch user's bookmark count
 .PHONY: fetch-user-bm-count

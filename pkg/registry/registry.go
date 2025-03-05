@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -12,6 +13,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/hiromaily/hatena-fake-detector/pkg/app"
+	"github.com/hiromaily/hatena-fake-detector/pkg/args"
 	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
 	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
@@ -29,6 +31,7 @@ type registry struct {
 	envConf  *envs.Config
 	appCode  app.AppCode
 	commitID string
+	args     *args.Args
 	urls     []string
 
 	isCLI         bool
@@ -61,13 +64,13 @@ func NewRegistry(
 	envConf *envs.Config,
 	appCode app.AppCode,
 	commitID string,
-	urls []string,
+	args *args.Args,
 ) Registry {
 	reg := registry{
 		envConf:  envConf,
 		appCode:  appCode,
 		commitID: commitID,
-		urls:     urls,
+		args:     args,
 		isCLI:    appCode != app.AppCodeWeb, // CLI mode
 	}
 	reg.targetFunc()
@@ -121,7 +124,13 @@ func (r *registry) newFetchHatenaPageURLsHandler() handler.Handler {
 }
 
 func (r *registry) newFetchBookmarkHandler() handler.Handler {
-	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase())
+	// retrieve args
+	var urls []string
+	if r.args.FetchBookmarkEntitiesCommand.URLs != "" {
+		urls = strings.Split(r.args.FetchBookmarkEntitiesCommand.URLs, ",")
+		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
+	}
+	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase(urls))
 }
 
 func (r *registry) newFetchUserBookmarkCountHandler() handler.Handler {
@@ -160,14 +169,14 @@ func (r *registry) newFetchHatenaPageURLsUsecase() usecase.FetchHatenaPageURLsUs
 	return usecase
 }
 
-func (r *registry) newFetchBookmarkUsecase() usecase.FetchBookmarkUsecaser {
+func (r *registry) newFetchBookmarkUsecase(urls []string) usecase.FetchBookmarkUsecaser {
 	usecase, err := usecase.NewFetchBookmarkUsecase(
 		r.newLogger(),
 		r.newTracer(r.appCode.String()),
 		r.newBookmarkRepository(),
 		r.newBookmarkFetcher(),
 		r.envConf.MaxWorkers, // maxWorker
-		r.urls,
+		urls,
 	)
 	if err != nil {
 		panic(err)
@@ -207,7 +216,7 @@ func (r *registry) newViewSummaryUsecase() usecase.ViewSummaryUsecaser {
 		r.newTracer(r.appCode.String()),
 		r.newSummaryRepository(),
 		r.urls,
-		50, // FIXME: cli args
+		50, // FIXME: cli args: threshold
 	)
 	if err != nil {
 		panic(err)

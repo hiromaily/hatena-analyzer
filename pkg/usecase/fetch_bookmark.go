@@ -79,6 +79,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 		}
 	} else {
 		for _, url := range f.urls {
+			// TODO: validate URL
 			entityURLs = append(entityURLs, entities.URL{Address: url})
 		}
 	}

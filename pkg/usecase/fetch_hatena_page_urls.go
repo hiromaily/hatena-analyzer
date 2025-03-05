@@ -24,9 +24,7 @@ type fetchHatenaPageURLsUsecase struct {
 }
 
 // TODO
-// - add cli parameter: category_code
 // - fetch urls concurrently
-// - fetch `all` category url with page's category
 // - add test
 
 func NewFetchHatenaPageURLsUsecase(
