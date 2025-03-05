@@ -124,9 +124,9 @@ VALUES
   ($1, $2);
 
 -- name: BulkInsertUrls :exec
--- @desc: insert urls by stored procedure. conflicts must be ignored. arg1: array of urls, arg2: array of category.
+-- @desc: insert urls by stored procedure. conflicts must be ignored. arg1: array of urls, arg2: array of category, arg3: array of isAll flag.
 -- name: BulkInsertURLs :exec
-CALL bulk_insert_urls($1, $2);
+CALL bulk_insert_urls($1, $2, $3);
 
 -- name: UpsertURL :one
 -- @desc: insert url if not existed, update url with is_deleted=false if existed

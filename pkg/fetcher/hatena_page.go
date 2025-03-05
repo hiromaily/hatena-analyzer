@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/net/html"
 
+	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
 	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
 )
 
@@ -23,7 +24,11 @@ func NewHatenaPageURLFetcher(logger logger.Logger) *hatenaPageURLFetcher {
 
 // Fetch bookmark count of user from Hatena user's page
 
-func (h *hatenaPageURLFetcher) Fetch(ctx context.Context, url string) ([]string, error) {
+func (h *hatenaPageURLFetcher) Fetch(
+	ctx context.Context,
+	url string,
+	isAll bool,
+) ([]entities.LinkInfo, error) {
 	// h.logger.Debug("hatenaPageURLFetcher.Fetch() fetching urls of page: ", "url", url)
 
 	// Request
@@ -46,13 +51,17 @@ func (h *hatenaPageURLFetcher) Fetch(ctx context.Context, url string) ([]string,
 
 	// h3 class=entrylist-contents-title > a href
 	className := "entrylist-contents-title"
-	hrefs := extractHrefsFromClass(doc, className)
+	hrefs := h.extractLinkInfoFromClass(doc, className, isAll)
 
 	return hrefs, nil
 }
 
-func extractHrefsFromClass(node *html.Node, className string) []string {
-	var hrefs []string
+func (h *hatenaPageURLFetcher) extractLinkInfoFromClass(
+	node *html.Node,
+	className string,
+	isAll bool,
+) []entities.LinkInfo {
+	var linkInfos []entities.LinkInfo
 	var fn func(n *html.Node)
 	fn = func(n *html.Node) {
 		// If the node is h3 tag
@@ -60,25 +69,36 @@ func extractHrefsFromClass(node *html.Node, className string) []string {
 			for _, attr := range n.Attr {
 				if attr.Key == "class" && strings.Contains(attr.Val, className) {
 					// Now look for 'a' tag inside this 'h3'
-					var aHref func(*html.Node) string
-					aHref = func(n *html.Node) string {
+					var aHref func(*html.Node) (string, string)
+					aHref = func(n *html.Node) (string, string) {
 						if n.Type == html.ElementNode && n.Data == "a" {
+							var href, entryCategory string
 							for _, attr := range n.Attr {
 								if attr.Key == "href" {
-									return attr.Val
+									href = attr.Val
 								}
+								if attr.Key == "data-entry-category" {
+									entryCategory = attr.Val
+								}
+							}
+							if href != "" && entryCategory != "" {
+								return href, entryCategory
 							}
 						}
 						// Recursively look into child nodes
 						for c := n.FirstChild; c != nil; c = c.NextSibling {
-							if href := aHref(c); href != "" {
-								return href
+							if href, entryCategory := aHref(c); href != "" && entryCategory != "" {
+								return href, entryCategory
 							}
 						}
-						return ""
+						return "", ""
 					}
-					if href := aHref(n); href != "" {
-						hrefs = append(hrefs, href)
+					if href, entryCategory := aHref(n); href != "" && entryCategory != "" {
+						cateCode := entities.GetCategoryCode(entryCategory)
+						linkInfos = append(
+							linkInfos,
+							entities.LinkInfo{Href: href, Category: cateCode, IsAll: isAll},
+						)
 					}
 				}
 			}
@@ -91,5 +111,5 @@ func extractHrefsFromClass(node *html.Node, className string) []string {
 	}
 
 	fn(node)
-	return hrefs
+	return linkInfos
 }

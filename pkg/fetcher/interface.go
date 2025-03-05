@@ -7,7 +7,7 @@ import (
 )
 
 type HatenaPageURLFetcher interface {
-	Fetch(ctx context.Context, url string) ([]string, error)
+	Fetch(ctx context.Context, url string, isAll bool) ([]entities.LinkInfo, error)
 }
 
 type EntityJSONFetcher interface {

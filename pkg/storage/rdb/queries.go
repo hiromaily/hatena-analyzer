@@ -120,6 +120,7 @@ func (p *PostgreQueries) CallBulkInsertURLs(
 	ctx context.Context,
 	urls []string,
 	categories []entities.CategoryCode,
+	isAlls []bool,
 ) error {
 	queries, release, err := p.rdbClient.GetQueries(ctx)
 	if err != nil {
@@ -131,6 +132,7 @@ func (p *PostgreQueries) CallBulkInsertURLs(
 	params := sqlcgen.BulkInsertUrlsParams{
 		BulkInsertUrls:   urls,
 		BulkInsertUrls_2: categories,
+		BulkInsertUrls_3: isAlls,
 	}
 	return queries.BulkInsertUrls(ctx, params)
 }

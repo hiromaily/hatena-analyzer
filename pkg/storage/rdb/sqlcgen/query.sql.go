@@ -12,17 +12,18 @@ import (
 )
 
 const bulkInsertUrls = `-- name: BulkInsertUrls :exec
-CALL bulk_insert_urls($1, $2)
+CALL bulk_insert_urls($1, $2, $3)
 `
 
 type BulkInsertUrlsParams struct {
 	BulkInsertUrls   interface{}
 	BulkInsertUrls_2 interface{}
+	BulkInsertUrls_3 interface{}
 }
 
-// @desc: insert urls by stored procedure. conflicts must be ignored. arg1: array of urls, arg2: array of category.
+// @desc: insert urls by stored procedure. conflicts must be ignored. arg1: array of urls, arg2: array of category, arg3: array of isAll flag.
 func (q *Queries) BulkInsertUrls(ctx context.Context, arg BulkInsertUrlsParams) error {
-	_, err := q.db.Exec(ctx, bulkInsertUrls, arg.BulkInsertUrls, arg.BulkInsertUrls_2)
+	_, err := q.db.Exec(ctx, bulkInsertUrls, arg.BulkInsertUrls, arg.BulkInsertUrls_2, arg.BulkInsertUrls_3)
 	return err
 }
 

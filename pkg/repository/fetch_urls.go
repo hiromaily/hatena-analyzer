@@ -11,7 +11,12 @@ import (
 type FetchURLRepositorier interface {
 	Close(ctx context.Context) error
 	// InsertURLs(ctx context.Context, category entities.CategoryCode, urls []string) error
-	CallBulkInsertURLs(ctx context.Context, urls []string, categories []entities.CategoryCode) error
+	CallBulkInsertURLs(
+		ctx context.Context,
+		urls []string,
+		categories []entities.CategoryCode,
+		isAlls []bool,
+	) error
 }
 
 type fetchURLRepository struct {
@@ -46,6 +51,7 @@ func (f *fetchURLRepository) CallBulkInsertURLs(
 	ctx context.Context,
 	urls []string,
 	categories []entities.CategoryCode,
+	isAlls []bool,
 ) error {
-	return f.postgreQueries.CallBulkInsertURLs(ctx, urls, categories)
+	return f.postgreQueries.CallBulkInsertURLs(ctx, urls, categories, isAlls)
 }

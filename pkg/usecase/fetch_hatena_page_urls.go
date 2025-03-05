@@ -82,27 +82,28 @@ func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 		}
 
 		// fetch page
-		f.logger.Info("fetching page", "category", category.String(), "url", url)
-		pageURLs, err := f.hatenaPageURLFetcher.Fetch(ctx, url)
+		f.logger.Info("fetching page", "url", url)
+		linkInfos, err := f.hatenaPageURLFetcher.Fetch(ctx, url, category == entities.All)
 		if err != nil {
 			f.logger.Error("failed to fetch page", "url", url, "error", err)
 			return err
 		}
-		if len(pageURLs) == 0 {
+		if len(linkInfos) == 0 {
 			f.logger.Warn("no URLs are fetched", "url", url)
 			continue
 		}
 
 		// Insert fetched URLs to DB
 		// FIXED: duplicate key value violates unique constraint "urls_url_address_key" (SQLSTATE 23505)
-		f.logger.Info("insert urls", "category", category.String(), "url_count", len(pageURLs))
+		f.logger.Info("insert urls", "category", category.String(), "url_count", len(linkInfos))
 		// if err := f.fetchURLRepo.InsertURLs(ctx, category, pageURLs); err != nil {
 		// 	f.logger.Error("failed to insert URLs", "category", category.String(), "error", err)
 		// }
-		if err := f.fetchURLRepo.CallBulkInsertURLs(ctx, pageURLs, category.Bulk(len(pageURLs))); err != nil {
+		urls, categories, isAlls := entities.LinkInfos(linkInfos).Extract()
+		if err := f.fetchURLRepo.CallBulkInsertURLs(ctx, urls, categories, isAlls); err != nil {
 			f.logger.Error("failed to insert URLs", "category", category.String(), "error", err)
 		}
-		totalFetchedURLs = append(totalFetchedURLs, pageURLs...)
+		totalFetchedURLs = append(totalFetchedURLs, urls...)
 	}
 	f.logger.Info("total fetched URLs", "total_url_count", len(totalFetchedURLs))
 

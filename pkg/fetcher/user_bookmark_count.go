@@ -47,7 +47,7 @@ func (u *userBookmarkCountFetcher) Fetch(ctx context.Context, userName string) (
 	}
 
 	targetClassName := "userprofile-status-count"
-	count, found := extractBookmarkCount(doc, targetClassName)
+	count, found := u.extractBookmarkCount(doc, targetClassName)
 	if !found {
 		return 0, fmt.Errorf("failed to get user bookmark count. user: %s", userName)
 	}
@@ -57,6 +57,24 @@ func (u *userBookmarkCountFetcher) Fetch(ctx context.Context, userName string) (
 
 	return count, nil
 }
+
+func (u *userBookmarkCountFetcher) extractBookmarkCount(n *html.Node, class string) (int, bool) {
+	if n.Type == html.ElementNode && n.Data == "span" && hasClass(n, class) && n.FirstChild != nil {
+		// remove comma first
+		data := strings.ReplaceAll(n.FirstChild.Data, ",", "")
+		if value, err := strconv.Atoi(data); err == nil {
+			return value, true
+		}
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if value, found := u.extractBookmarkCount(c, class); found {
+			return value, true
+		}
+	}
+	return 0, false
+}
+
+// Utility
 
 func hasClass(n *html.Node, class string) bool {
 	for _, a := range n.Attr {
@@ -70,20 +88,4 @@ func hasClass(n *html.Node, class string) bool {
 		}
 	}
 	return false
-}
-
-func extractBookmarkCount(n *html.Node, class string) (int, bool) {
-	if n.Type == html.ElementNode && n.Data == "span" && hasClass(n, class) && n.FirstChild != nil {
-		// remove comma first
-		data := strings.ReplaceAll(n.FirstChild.Data, ",", "")
-		if value, err := strconv.Atoi(data); err == nil {
-			return value, true
-		}
-	}
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		if value, found := extractBookmarkCount(c, class); found {
-			return value, true
-		}
-	}
-	return 0, false
 }

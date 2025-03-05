@@ -25,18 +25,40 @@ func (c CategoryCode) String() string {
 	return string(c)
 }
 
-func (c CategoryCode) Bulk(length int) []CategoryCode {
-	categories := make([]CategoryCode, 0, length)
-	for range length {
-		categories = append(categories, c)
-	}
-	return categories
+var CategoryCodeMap = map[CategoryCode]string{
+	All:           "総合",
+	General:       "一般",
+	Social:        "世の中",
+	Economics:     "政治と経済",
+	Life:          "暮らし",
+	Knowledge:     "学び",
+	IT:            "テクノロジー",
+	Fun:           "おもしろ",
+	Entertainment: "エンタメ",
+	Game:          "アニメとゲーム",
 }
+
+func GetCategoryCode(val string) CategoryCode {
+	for k, v := range CategoryCodeMap {
+		if v == val {
+			return k
+		}
+	}
+	return Unknown
+}
+
+// func (c CategoryCode) Bulk(length int) []CategoryCode {
+// 	categories := make([]CategoryCode, 0, length)
+// 	for range length {
+// 		categories = append(categories, c)
+// 	}
+// 	return categories
+// }
 
 // return categories without all, unknown
 func GetCategoryCodeList() []CategoryCode {
 	return []CategoryCode{
-		General, Social, Economics, Life, Knowledge, IT, Fun, Entertainment, Game,
+		All, General, Social, Economics, Life, Knowledge, IT, Fun, Entertainment, Game,
 	}
 }
 
