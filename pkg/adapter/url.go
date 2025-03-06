@@ -3,8 +3,8 @@ package adapter
 import (
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/rdb/sqlcgen"
 )
 
 func AllURLsToEntityModel(urls []sqlcgen.GetAllURLsRow) []entities.URL {

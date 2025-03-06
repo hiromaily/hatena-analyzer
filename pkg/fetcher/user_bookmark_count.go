@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/net/html"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
 )
 
 type userBookmarkCountFetcher struct {

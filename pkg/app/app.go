@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/handler"
+	"github.com/hiromaily/hatena-analyzer/pkg/handler"
 )
 
 ///

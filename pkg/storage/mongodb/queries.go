@@ -8,8 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
 )
 
 type MongoDBQueries struct {

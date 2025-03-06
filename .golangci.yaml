@@ -39,7 +39,7 @@ linters-settings:
       - pattern: 'interface{}'
         replacement: 'any'
   goimports:
-    local-prefixes: github.com/hiromaily/hatena-fake-detector
+    local-prefixes: github.com/hiromaily/hatena-analyzer
   lll:
     line-length: 120
   misspell:

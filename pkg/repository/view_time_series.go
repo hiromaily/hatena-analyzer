@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/influxdb"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/influxdb"
 )
 
 type TimeSeriesRepositorier interface {

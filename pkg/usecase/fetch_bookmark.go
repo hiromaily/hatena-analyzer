@@ -8,12 +8,12 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
-	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/fetcher"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/repository"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/rdb"
+	"github.com/hiromaily/hatena-analyzer/pkg/tracer"
 )
 
 type FetchBookmarkUsecaser interface {

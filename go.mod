@@ -1,4 +1,4 @@
-module github.com/hiromaily/hatena-fake-detector
+module github.com/hiromaily/hatena-analyzer
 
 go 1.23.6
 

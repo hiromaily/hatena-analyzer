@@ -7,9 +7,9 @@ import (
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/args"
-	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
-	"github.com/hiromaily/hatena-fake-detector/pkg/registry"
+	"github.com/hiromaily/hatena-analyzer/pkg/args"
+	"github.com/hiromaily/hatena-analyzer/pkg/envs"
+	"github.com/hiromaily/hatena-analyzer/pkg/registry"
 )
 
 // value is passed when building application

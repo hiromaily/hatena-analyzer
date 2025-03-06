@@ -9,8 +9,8 @@ import (
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
 )
 
 type InfluxDBQueries struct {

@@ -62,37 +62,37 @@ gen-db-all: copy-query gen-db-code
 # no args
 .PHONY: fetch-page-urls
 fetch-page-urls:
-	go run ./cmd/fake-detector/ fetch-hatena-page-urls
+	go run ./cmd/analyzer/ fetch-hatena-page-urls
 
 # Fetch bookmark users, title, count from page of given URL and save data to DB
 
 .PHONY: fetch-bookmark
 fetch-bookmark:
-	go run ./cmd/fake-detector/ fetch-bookmark
-	#go run ./cmd/fake-detector/ fetch-bookmark --urls=https://www.google.co.jp/,https://chatgpt.com/ --verbose
+	go run ./cmd/analyzer/ fetch-bookmark
+	#go run ./cmd/analyzer/ fetch-bookmark --urls=https://www.google.co.jp/,https://chatgpt.com/ --verbose
 
 # Fetch user's bookmark count
 .PHONY: fetch-user-bm-count
 fetch-user-bm-count:
-	go run ./cmd/fake-detector/ fetch-user-bm-count
-	#go run ./cmd/fake-detector/ fetch-user-bm-count --urls=https://www.google.co.jp/,https://chatgpt.com/
+	go run ./cmd/analyzer/ fetch-user-bm-count
+	#go run ./cmd/analyzer/ fetch-user-bm-count --urls=https://www.google.co.jp/,https://chatgpt.com/
 
 # View time series of bookmarked entity
 # urls is required to run 
 .PHONY: view-timeseries
 view-timeseries:
-	go run ./cmd/fake-detector/ view-time-series --urls=https://www.google.co.jp/,https://chatgpt.com/
+	go run ./cmd/analyzer/ view-time-series --urls=https://www.google.co.jp/,https://chatgpt.com/
 
 # View details of bookmarked entity
 # urls is required to run 
 .PHONY: view-bookmark-details
 view-bookmark-details:
-	go run ./cmd/fake-detector/ view-bookmark-details --urls=https://www.google.co.jp/,https://chatgpt.com/
+	go run ./cmd/analyzer/ view-bookmark-details --urls=https://www.google.co.jp/,https://chatgpt.com/
 
 # View summary of bookmarked entity
 .PHONY: view-summary
 view-summary:
-	go run ./cmd/fake-detector/ view-summary --threshold=60
+	go run ./cmd/analyzer/ view-summary --threshold=60
 
 # Run all executions
 .PHONY: fetch-all

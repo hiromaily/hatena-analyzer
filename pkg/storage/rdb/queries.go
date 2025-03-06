@@ -6,10 +6,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/adapter"
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
+	"github.com/hiromaily/hatena-analyzer/pkg/adapter"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/rdb/sqlcgen"
 )
 
 type PostgreQueries struct {
