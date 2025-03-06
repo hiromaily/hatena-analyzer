@@ -32,8 +32,7 @@ type registry struct {
 	commitID string
 	args     *args.Args
 
-	isCLI         bool
-	targetHandler handler.Handler
+	isCLI bool
 
 	// repositories
 	fetchBookmarkRepo   repository.FetchBookmarkRepositorier
@@ -63,7 +62,7 @@ func NewRegistry(
 	appCode app.AppCode,
 	commitID string,
 	args *args.Args,
-) (Registry, error) {
+) Registry {
 	reg := registry{
 		envConf:  envConf,
 		appCode:  appCode,
@@ -71,15 +70,21 @@ func NewRegistry(
 		args:     args,
 		isCLI:    appCode != app.AppCodeWeb, // CLI mode
 	}
-	return &reg, reg.targetFunc()
+	return &reg
 }
 
 func (r *registry) InitializeApp() (app.Application, error) {
 	if r.isCLI {
 		// CLI Application
-		app := app.NewCLIApp(r.targetHandler)
+		handler, err := r.createCLIHandler()
+		if err != nil {
+			return nil, err
+		}
+		app := app.NewCLIApp(handler)
 		return app, nil
 	}
+	// TODO: Web Application
+
 	return nil, errors.New("web application is not implemented yet")
 }
 
@@ -87,38 +92,35 @@ func (r *registry) Logger() logger.Logger {
 	return r.newLogger()
 }
 
-func (r *registry) targetFunc() error {
+func (r *registry) createCLIHandler() (handler.Handler, error) {
+	var handler handler.Handler
 	var err error
-
-	if !r.isCLI {
-		return nil
-	}
 
 	switch {
 	case r.appCode == app.AppCodeFetchHatenaPageURLs:
-		r.targetHandler, err = r.newFetchHatenaPageURLsHandler()
+		handler, err = r.newFetchHatenaPageURLsHandler()
 	case r.appCode == app.AppCodeFetchBookmarkEntities:
-		r.targetHandler, err = r.newFetchBookmarkHandler()
+		handler, err = r.newFetchBookmarkHandler()
 	case r.appCode == app.AppCodeFetchUserBookmarkCount:
-		r.targetHandler, err = r.newFetchUserBookmarkCountHandler()
+		handler, err = r.newFetchUserBookmarkCountHandler()
 	case r.appCode == app.AppCodeViewTimeSeries:
-		r.targetHandler, err = r.newViewTimeSeriesHanlder()
+		handler, err = r.newViewTimeSeriesHanlder()
 	case r.appCode == app.AppCodeViewBookmarkDetails:
-		r.targetHandler, err = r.newViewBookmarkDetailsHanlder()
+		handler, err = r.newViewBookmarkDetailsHanlder()
 	case r.appCode == app.AppCodeViewSummary:
-		r.targetHandler, err = r.newViewSummaryHanlder()
+		handler, err = r.newViewSummaryHanlder()
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if r.targetHandler == nil {
-		return errors.New("appCode is not found")
+	if handler == nil {
+		return nil, errors.New("appCode is not found")
 	}
-	return nil
+	return handler, nil
 }
 
 ///
-/// handlers
+/// CLI handlers
 ///
 
 func (r *registry) newFetchHatenaPageURLsHandler() (handler.Handler, error) {

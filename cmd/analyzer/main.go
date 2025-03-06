@@ -38,12 +38,7 @@ func main() {
 	}
 
 	// Register for initialization of dependencies
-	reg, err := registry.NewRegistry(&cfg, appCode, CommitID, args)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
+	reg := registry.NewRegistry(&cfg, appCode, CommitID, args)
 	app, err := reg.InitializeApp()
 	if err != nil {
 		fmt.Println(err)

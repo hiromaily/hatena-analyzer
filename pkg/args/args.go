@@ -32,6 +32,10 @@ type ViewSummarySubCmd struct {
 	Threshold uint   `arg:"--threshold"`
 }
 
+type WebSubCmd struct {
+	Port uint `arg:"--port"`
+}
+
 type Args struct {
 	Version bool // global option
 	// URLs    []string `arg:"--urls,env:URLS"` // global option
@@ -48,6 +52,9 @@ type Args struct {
 	ViewBookmarkDetailsCommand *ViewBookmarkDetailsSubCmd `arg:"subcommand:view-bookmark-details"`
 	// view bookmark summary
 	ViewSummaryCommand *ViewSummarySubCmd `arg:"subcommand:view-summary"`
+
+	// web server
+	WebCommand *WebSubCmd `arg:"subcommand:web"`
 }
 
 func Parse() (*Args, *arg.Parser, app.AppCode) {
@@ -70,6 +77,8 @@ func getAppCode(args *Args) app.AppCode {
 		return app.AppCodeViewBookmarkDetails
 	case args.ViewSummaryCommand != nil:
 		return app.AppCodeViewSummary
+	case args.WebCommand != nil:
+		return app.AppCodeWeb
 	}
 	panic(fmt.Errorf("subcommand is not found"))
 }

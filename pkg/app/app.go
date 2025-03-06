@@ -23,3 +23,20 @@ func NewCLIApp(handler handler.Handler) Application {
 func (c *cliApp) Run() error {
 	return c.targetHandler.Handler(context.Background())
 }
+
+///
+/// Web Application
+///
+
+type webApp struct {
+}
+
+func NewWebApp() Application {
+	// create web application
+
+	return &webApp{}
+}
+
+func (c *webApp) Run() error {
+	return nil
+}
