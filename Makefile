@@ -78,21 +78,21 @@ fetch-user-bm-count:
 	#go run ./cmd/fake-detector/ fetch-user-bm-count --urls=https://www.google.co.jp/,https://chatgpt.com/
 
 # View time series of bookmarked entity
-# urls [env: URLS] are required to run 
+# urls is required to run 
 .PHONY: view-timeseries
 view-timeseries:
-	go run ./cmd/fake-detector/ view-time-series
+	go run ./cmd/fake-detector/ view-time-series --urls=https://www.google.co.jp/,https://chatgpt.com/
 
 # View details of bookmarked entity
-# urls [env: URLS] are required to run 
+# urls is required to run 
 .PHONY: view-bookmark-details
 view-bookmark-details:
-	go run ./cmd/fake-detector/ view-bookmark-details
+	go run ./cmd/fake-detector/ view-bookmark-details --urls=https://www.google.co.jp/,https://chatgpt.com/
 
 # View summary of bookmarked entity
 .PHONY: view-summary
 view-summary:
-	go run ./cmd/fake-detector/ view-summary
+	go run ./cmd/fake-detector/ view-summary --threshold=60
 
 # Run all executions
 .PHONY: fetch-all

@@ -75,6 +75,8 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 	}
 
 	s.logger.Info("url count", "count", len(entityURLs))
+
+	fmt.Printf("[Private user rate over threshold: %d]\n", s.threshold)
 	for _, entityURL := range entityURLs {
 		if entityURL.PrivateUserRate > float64(s.threshold) {
 			s.logger.Info(
@@ -87,13 +89,15 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 			)
 		}
 	}
-
 	fmt.Println("")
+
 	averageRates, err := s.summaryRepo.GetAveragePrivateUserRates(ctx)
 	if err != nil {
 		s.logger.Error("failed to call summaryRepo.GetAveragePrivateUserRates()", "error", err)
 		return err
 	}
+
+	fmt.Println("[Average private user rate per category]")
 	for _, ave := range averageRates {
 		s.logger.Info(
 			"average private user rate",

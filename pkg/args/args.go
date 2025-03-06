@@ -10,9 +10,26 @@ import (
 
 type SubCommand struct{}
 
-type SubCommandWithURLs struct {
+type FetchBookmarkEntitiesSubCmd struct {
 	URLs    string `arg:"--urls"` // e.g. https://www.google.co.jp/,https://chatgpt.com/
 	Verbose bool   `args:"--verbose"`
+}
+
+type FetchUserBookmarkCountSubCmd struct {
+	URLs string `arg:"--urls"` // e.g. https://www.google.co.jp/,https://chatgpt.com/
+}
+
+type ViewTimeSeriesSubCmd struct {
+	URLs string `arg:"--urls"` // e.g. https://www.google.co.jp/,https://chatgpt.com/
+}
+
+type ViewBookmarkDetailsSubCmd struct {
+	URLs string `arg:"--urls"` // e.g. https://www.google.co.jp/,https://chatgpt.com/
+}
+
+type ViewSummarySubCmd struct {
+	URLs      string `arg:"--urls"` // e.g. https://www.google.co.jp/,https://chatgpt.com/
+	Threshold uint   `arg:"--threshold"`
 }
 
 type Args struct {
@@ -22,15 +39,15 @@ type Args struct {
 	// fetch URLs from hatena pages
 	FetchHatenaPageURLsCommand *SubCommand `arg:"subcommand:fetch-hatena-page-urls"`
 	// fetch bookmark entity from bookmark url
-	FetchBookmarkEntitiesCommand *SubCommandWithURLs `arg:"subcommand:fetch-bookmark"`
+	FetchBookmarkEntitiesCommand *FetchBookmarkEntitiesSubCmd `arg:"subcommand:fetch-bookmark"`
 	// fetch user bookmark count from bookmark url
-	FetchUserBookmarkCountCommand *SubCommandWithURLs `arg:"subcommand:fetch-user-bm-count"`
+	FetchUserBookmarkCountCommand *FetchUserBookmarkCountSubCmd `arg:"subcommand:fetch-user-bm-count"`
 	// view time series of bookmark
-	ViewTimeSeriesCommand *SubCommand `arg:"subcommand:view-time-series"`
+	ViewTimeSeriesCommand *ViewTimeSeriesSubCmd `arg:"subcommand:view-time-series"`
 	// view bookmark details
-	ViewBookmarkDetailsCommand *SubCommand `arg:"subcommand:view-bookmark-details"`
+	ViewBookmarkDetailsCommand *ViewBookmarkDetailsSubCmd `arg:"subcommand:view-bookmark-details"`
 	// view bookmark summary
-	ViewSummaryCommand *SubCommand `arg:"subcommand:view-summary"`
+	ViewSummaryCommand *ViewSummarySubCmd `arg:"subcommand:view-summary"`
 }
 
 func Parse() (*Args, *arg.Parser, app.AppCode) {
