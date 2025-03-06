@@ -12,19 +12,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/app"
-	"github.com/hiromaily/hatena-fake-detector/pkg/args"
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/envs"
-	"github.com/hiromaily/hatena-fake-detector/pkg/fetcher"
-	"github.com/hiromaily/hatena-fake-detector/pkg/handler"
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/influxdb"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/mongodb"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
-	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
-	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
+	"github.com/hiromaily/hatena-analyzer/pkg/app"
+	"github.com/hiromaily/hatena-analyzer/pkg/args"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/envs"
+	"github.com/hiromaily/hatena-analyzer/pkg/fetcher"
+	"github.com/hiromaily/hatena-analyzer/pkg/handler"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/repository"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/influxdb"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/mongodb"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/rdb"
+	"github.com/hiromaily/hatena-analyzer/pkg/tracer"
+	"github.com/hiromaily/hatena-analyzer/pkg/usecase"
 )
 
 type registry struct {
@@ -130,7 +130,10 @@ func (r *registry) newFetchBookmarkHandler() handler.Handler {
 		urls = strings.Split(r.args.FetchBookmarkEntitiesCommand.URLs, ",")
 		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
 	}
-	return handler.NewFetchBookmarkCLIHandler(r.newLogger(), r.newFetchBookmarkUsecase(urls, r.args.FetchBookmarkEntitiesCommand.Verbose))
+	return handler.NewFetchBookmarkCLIHandler(
+		r.newLogger(),
+		r.newFetchBookmarkUsecase(urls, r.args.FetchBookmarkEntitiesCommand.Verbose),
+	)
 }
 
 func (r *registry) newFetchUserBookmarkCountHandler() handler.Handler {

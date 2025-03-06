@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/repository"
-	"github.com/hiromaily/hatena-fake-detector/pkg/times"
-	"github.com/hiromaily/hatena-fake-detector/pkg/tracer"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/repository"
+	"github.com/hiromaily/hatena-analyzer/pkg/times"
+	"github.com/hiromaily/hatena-analyzer/pkg/tracer"
 )
 
 type ViewTimeSeriesUsecaser interface {

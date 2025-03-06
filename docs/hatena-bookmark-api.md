@@ -38,11 +38,6 @@ curl -s https://b.hatena.ne.jp/entry/json/https://www.google.co.jp/ | jq '.bookm
 curl -s https://b.hatena.ne.jp/entry/json/https://www.google.co.jp/ | jq '.bookmarks | length'
 ```
 
-### count数とブックマーク配列の要素数が異なるのはなぜか？
-
-ブックマーク後にそのアカウントを削除したケースがこれに該当すると思われる。
-つまり、この差分が大きいページのブックマーク数は不正の可能性が高い。
-
 ## [はてなブックマーク ユーザー情報 API](https://developer.hatena.ne.jp/ja/documents/bookmark/apis/rest/my/)
 
 認証したユーザーの情報を取得

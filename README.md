@@ -11,7 +11,7 @@ Analyze bookmarked entity on [Hatena](https://b.hatena.ne.jp/hotentry/all)
 
 ```sh
 # Help
-go run ./cmd/fake-detector/ -h
+go run ./cmd/analyzer/ -h
 ```
 
 - `fetch-page-urls`: Fetched listed urls from Hatena page

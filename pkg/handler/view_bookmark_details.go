@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/usecase"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/usecase"
 )
 
 //

@@ -5,7 +5,7 @@ import (
 
 	"github.com/alexflint/go-arg"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/app"
+	"github.com/hiromaily/hatena-analyzer/pkg/app"
 )
 
 type SubCommand struct{}

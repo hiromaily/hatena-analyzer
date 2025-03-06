@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/logger"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb"
+	"github.com/hiromaily/hatena-analyzer/pkg/logger"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/rdb"
 )
 
 type FetchUserRepositorier interface {

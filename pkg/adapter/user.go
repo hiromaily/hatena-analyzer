@@ -1,8 +1,8 @@
 package adapter
 
 import (
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/rdb/sqlcgen"
 )
 
 func DBUsersToEntityModel(users []sqlcgen.GetUsersByURLRow) []entities.RDBUser {

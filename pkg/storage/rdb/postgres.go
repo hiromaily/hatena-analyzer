@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/storage/rdb/sqlcgen"
+	"github.com/hiromaily/hatena-analyzer/pkg/storage/rdb/sqlcgen"
 )
 
 //

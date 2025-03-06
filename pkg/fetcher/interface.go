@@ -3,7 +3,7 @@ package fetcher
 import (
 	"context"
 
-	"github.com/hiromaily/hatena-fake-detector/pkg/entities"
+	"github.com/hiromaily/hatena-analyzer/pkg/entities"
 )
 
 type HatenaPageURLFetcher interface {
