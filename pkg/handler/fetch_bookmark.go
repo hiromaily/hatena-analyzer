@@ -15,24 +15,30 @@ import (
 //
 
 type fetchBookmarkCLIHandler struct {
-	logger  logger.Logger
-	usecase usecase.FetchBookmarkUsecaser
+	logger    logger.Logger
+	usecase   usecase.FetchBookmarkUsecaser
+	urls      []string
+	isVerbose bool
 }
 
 func NewFetchBookmarkCLIHandler(
 	logger logger.Logger,
 	usecase usecase.FetchBookmarkUsecaser,
+	urls []string,
+	isVerbose bool,
 ) *fetchBookmarkCLIHandler {
 	return &fetchBookmarkCLIHandler{
-		logger:  logger,
-		usecase: usecase,
+		logger:    logger,
+		usecase:   usecase,
+		urls:      urls,
+		isVerbose: isVerbose,
 	}
 }
 
 func (f *fetchBookmarkCLIHandler) Handler(ctx context.Context) error {
 	f.logger.Info("fetchBookmarkCLIHandler Handler")
 
-	err := f.usecase.Execute(ctx)
+	err := f.usecase.Execute(ctx, f.urls, f.isVerbose)
 	if err != nil {
 		f.logger.Error("failed to fetch bookmark data", "error", err)
 	}
@@ -70,7 +76,8 @@ func (f *fetchBookmarkWebHandler) Handler(_ context.Context) error {
 func (f *fetchBookmarkWebHandler) WebHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	err := f.usecase.Execute(ctx)
+	// TODO
+	err := f.usecase.Execute(ctx, nil, false)
 	if err != nil {
 		f.logger.Error("failed to fetch bookmark data", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bookmark data"})

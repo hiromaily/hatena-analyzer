@@ -17,22 +17,25 @@ import (
 type viewTimeSeriesCLIHandler struct {
 	logger  logger.Logger
 	usecase usecase.ViewTimeSeriesUsecaser
+	urls    []string
 }
 
 func NewViewTimeSeriesCLIHandler(
 	logger logger.Logger,
-	usecase usecase.ViewSummaryUsecaser,
+	usecase usecase.ViewTimeSeriesUsecaser,
+	urls []string,
 ) *viewTimeSeriesCLIHandler {
 	return &viewTimeSeriesCLIHandler{
 		logger:  logger,
 		usecase: usecase,
+		urls:    urls,
 	}
 }
 
 func (v *viewTimeSeriesCLIHandler) Handler(ctx context.Context) error {
 	v.logger.Info("viewTimeSeriesCLIHandler Handler")
 
-	err := v.usecase.Execute(ctx)
+	err := v.usecase.Execute(ctx, v.urls)
 	if err != nil {
 		v.logger.Error("failed to view bookmark time series", "error", err)
 	}
@@ -54,7 +57,7 @@ type viewTimeSeriesWebHandler struct {
 
 func NewViewTimeSeriesWebHandler(
 	logger logger.Logger,
-	usecase usecase.ViewSummaryUsecaser,
+	usecase usecase.ViewTimeSeriesUsecaser,
 ) *viewTimeSeriesWebHandler {
 	return &viewTimeSeriesWebHandler{
 		logger:  logger,
@@ -69,7 +72,8 @@ func (v *viewTimeSeriesWebHandler) Handler(_ context.Context) error {
 func (v *viewTimeSeriesWebHandler) WebHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	err := v.usecase.Execute(ctx)
+	// TODO: url
+	err := v.usecase.Execute(ctx, nil)
 	if err != nil {
 		v.logger.Error("failed to fetch bookmark data", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bookmark data"})

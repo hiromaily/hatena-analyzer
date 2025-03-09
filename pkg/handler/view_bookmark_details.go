@@ -17,22 +17,25 @@ import (
 type viewBookmarkDetailsCLIHandler struct {
 	logger  logger.Logger
 	usecase usecase.ViewBookmarkDetailsUsecaser
+	urls    []string
 }
 
 func NewViewBookmarkDetailsCLIHandler(
 	logger logger.Logger,
 	usecase usecase.ViewBookmarkDetailsUsecaser,
+	urls []string,
 ) *viewBookmarkDetailsCLIHandler {
 	return &viewBookmarkDetailsCLIHandler{
 		logger:  logger,
 		usecase: usecase,
+		urls:    urls,
 	}
 }
 
 func (v *viewBookmarkDetailsCLIHandler) Handler(ctx context.Context) error {
 	v.logger.Info("viewBookmarkDetailsCLIHandler Handler")
 
-	err := v.usecase.Execute(ctx)
+	err := v.usecase.Execute(ctx, v.urls)
 	if err != nil {
 		v.logger.Error("failed to view bookmark details", "error", err)
 	}
@@ -69,7 +72,9 @@ func (v *viewBookmarkDetailsWebHandler) Handler(_ context.Context) error {
 func (v *viewBookmarkDetailsWebHandler) WebHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	err := v.usecase.Execute(ctx)
+	// TODO
+	// urls := c.Query("urls")
+	err := v.usecase.Execute(ctx, nil)
 	if err != nil {
 		v.logger.Error("failed to fetch bookmark data", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bookmark data"})

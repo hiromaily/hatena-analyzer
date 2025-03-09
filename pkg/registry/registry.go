@@ -42,19 +42,19 @@ type registry struct {
 	bookmarkDetailsRepo repository.BookmarkDetailsRepositorier
 	summaryRepo         repository.SummaryRepositorier
 	// db clients
+	postgresClient  *rdb.SqlcPostgresClient
+	influxdbClient  influxdb2.Client
+	mongodbClient   *mongo.Client
 	postgresQueries *rdb.PostgreQueries
 	influxDBQueries *influxdb.InfluxDBQueries
 	mongoDBQueries  *mongodb.MongoDBQueries
-
-	// common instance
-	logger                   logger.Logger
-	tracer                   tracer.Tracer
-	postgresClient           *rdb.SqlcPostgresClient
-	influxdbClient           influxdb2.Client
-	mongodbClient            *mongo.Client
+	// fetchers
 	entityJSONFetcher        fetcher.EntityJSONFetcher
 	userBookmarkCountFetcher fetcher.UserBookmarkCountFetcher
 	pageURLFetcher           fetcher.HatenaPageURLFetcher
+	// common instance
+	logger logger.Logger
+	tracer tracer.Tracer
 }
 
 func NewRegistry(
@@ -128,79 +128,105 @@ func (r *registry) newFetchHatenaPageURLsHandler() (handler.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	return handler.NewFetchHatenaPageURLsCLIHandler(r.newLogger(), usecaser), nil
+	if r.isCLI {
+		return handler.NewFetchHatenaPageURLsCLIHandler(r.newLogger(), usecaser), nil
+	}
+	return handler.NewFetchHatenaPageURLsWebHandler(r.newLogger(), usecaser), nil
 }
 
 func (r *registry) newFetchBookmarkHandler() (handler.Handler, error) {
-	// retrieve args
-	var urls []string
-	if r.args.FetchBookmarkEntitiesCommand.URLs != "" {
-		urls = strings.Split(r.args.FetchBookmarkEntitiesCommand.URLs, ",")
-		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
-	}
-	usecaser, err := r.newFetchBookmarkUsecase(urls, r.args.FetchBookmarkEntitiesCommand.Verbose)
+	usecaser, err := r.newFetchBookmarkUsecase()
 	if err != nil {
 		return nil, err
 	}
-	return handler.NewFetchBookmarkCLIHandler(
+	if r.isCLI {
+		// retrieve args
+		var urls []string
+		if r.args.FetchBookmarkEntitiesCommand.URLs != "" {
+			urls = strings.Split(r.args.FetchBookmarkEntitiesCommand.URLs, ",")
+			r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
+		}
+		return handler.NewFetchBookmarkCLIHandler(
+			r.newLogger(), usecaser,
+			urls, r.args.FetchBookmarkEntitiesCommand.Verbose,
+		), nil
+	}
+	return handler.NewFetchBookmarkWebHandler(
 		r.newLogger(), usecaser,
 	), nil
 }
 
 func (r *registry) newFetchUserBookmarkCountHandler() (handler.Handler, error) {
-	// retrieve args
-	var urls []string
-	if r.args.FetchUserBookmarkCountCommand.URLs != "" {
-		urls = strings.Split(r.args.FetchUserBookmarkCountCommand.URLs, ",")
-		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
-	}
-	usecaser, err := r.newFetchUserBookmarkCountUsecase(urls)
+	usecaser, err := r.newFetchUserBookmarkCountUsecase()
 	if err != nil {
 		return nil, err
 	}
-	return handler.NewFetchUserBookmarkCountCLIHandler(r.newLogger(), usecaser), nil
+	if r.isCLI {
+		// retrieve args
+		var urls []string
+		if r.args.FetchUserBookmarkCountCommand.URLs != "" {
+			urls = strings.Split(r.args.FetchUserBookmarkCountCommand.URLs, ",")
+			r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
+		}
+		return handler.NewFetchUserBookmarkCountCLIHandler(r.newLogger(), usecaser, urls), nil
+	}
+	return handler.NewFetchUserBookmarkCountWebHandler(r.newLogger(), usecaser), nil
 }
 
 func (r *registry) newViewTimeSeriesHanlder() (handler.Handler, error) {
-	// retrieve args
-	var urls []string
-	if r.args.ViewTimeSeriesCommand.URLs != "" {
-		urls = strings.Split(r.args.ViewTimeSeriesCommand.URLs, ",")
-		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
-	}
-	usecaser, err := r.newViewTimeSeriesUsecase(urls)
+	usecaser, err := r.newViewTimeSeriesUsecase()
 	if err != nil {
 		return nil, err
 	}
-	return handler.NewViewTimeSeriesCLIHandler(r.newLogger(), usecaser), nil
+	if r.isCLI {
+		// retrieve args
+		var urls []string
+		if r.args.ViewTimeSeriesCommand.URLs != "" {
+			urls = strings.Split(r.args.ViewTimeSeriesCommand.URLs, ",")
+			r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
+		}
+		return handler.NewViewTimeSeriesCLIHandler(r.newLogger(), usecaser, urls), nil
+	}
+	return handler.NewViewTimeSeriesWebHandler(r.newLogger(), usecaser), nil
 }
 
 func (r *registry) newViewBookmarkDetailsHanlder() (handler.Handler, error) {
-	// retrieve args
-	var urls []string
-	if r.args.ViewBookmarkDetailsCommand.URLs != "" {
-		urls = strings.Split(r.args.ViewBookmarkDetailsCommand.URLs, ",")
-		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
-	}
-	usecaser, err := r.newViewBookmarkDetailsUsecase(urls)
+	usecaser, err := r.newViewBookmarkDetailsUsecase()
 	if err != nil {
 		return nil, err
 	}
-	return handler.NewViewBookmarkDetailsCLIHandler(r.newLogger(), usecaser), nil
+	if r.isCLI {
+		// retrieve args
+		var urls []string
+		if r.args.ViewBookmarkDetailsCommand.URLs != "" {
+			urls = strings.Split(r.args.ViewBookmarkDetailsCommand.URLs, ",")
+			r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
+		}
+		return handler.NewViewBookmarkDetailsCLIHandler(r.newLogger(), usecaser, urls), nil
+	}
+	return handler.NewViewBookmarkDetailsWebHandler(r.newLogger(), usecaser), nil
 }
 
 func (r *registry) newViewSummaryHanlder() (handler.Handler, error) {
 	// retrieve args
-	var urls []string
-	if r.args.ViewSummaryCommand.URLs != "" {
-		urls = strings.Split(r.args.ViewSummaryCommand.URLs, ",")
-		r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
-	}
-	usecaser, err := r.newViewSummaryUsecase(urls, r.args.ViewSummaryCommand.Threshold)
+	usecaser, err := r.newViewSummaryUsecase()
 	if err != nil {
 		return nil, err
 	}
-	return handler.NewViewSummaryCLIHandler(r.newLogger(), usecaser), nil
+	if r.isCLI {
+		var urls []string
+		if r.args.ViewSummaryCommand.URLs != "" {
+			urls = strings.Split(r.args.ViewSummaryCommand.URLs, ",")
+			r.newLogger().Info("given URLs", "urls", urls, "len", len(urls))
+		}
+		return handler.NewViewSummaryCLIHandler(
+			r.newLogger(),
+			usecaser,
+			urls,
+			r.args.ViewSummaryCommand.Threshold,
+		), nil
+	}
+	return handler.NewViewSummaryWebHandler(r.newLogger(), usecaser), nil
 }
 
 ///
@@ -231,10 +257,7 @@ func (r *registry) newFetchHatenaPageURLsUsecase() (usecase.FetchHatenaPageURLsU
 	return usecase, nil
 }
 
-func (r *registry) newFetchBookmarkUsecase(
-	urls []string,
-	isVerbose bool,
-) (usecase.FetchBookmarkUsecaser, error) {
+func (r *registry) newFetchBookmarkUsecase() (usecase.FetchBookmarkUsecaser, error) {
 	tracer, err := r.newTracer(r.appCode.String())
 	if err != nil {
 		return nil, err
@@ -249,8 +272,6 @@ func (r *registry) newFetchBookmarkUsecase(
 		bookmarkRepo,
 		r.newBookmarkFetcher(),
 		r.envConf.MaxWorkers, // maxWorker
-		urls,
-		isVerbose,
 	)
 	if err != nil {
 		return nil, err
@@ -258,7 +279,7 @@ func (r *registry) newFetchBookmarkUsecase(
 	return usecase, nil
 }
 
-func (r *registry) newViewTimeSeriesUsecase(urls []string) (usecase.ViewTimeSeriesUsecaser, error) {
+func (r *registry) newViewTimeSeriesUsecase() (usecase.ViewTimeSeriesUsecaser, error) {
 	tracer, err := r.newTracer(r.appCode.String())
 	if err != nil {
 		return nil, err
@@ -271,7 +292,6 @@ func (r *registry) newViewTimeSeriesUsecase(urls []string) (usecase.ViewTimeSeri
 		r.newLogger(),
 		tracer,
 		timeSeriesRepo,
-		urls,
 	)
 	if err != nil {
 		return nil, err
@@ -279,7 +299,7 @@ func (r *registry) newViewTimeSeriesUsecase(urls []string) (usecase.ViewTimeSeri
 	return usecase, nil
 }
 
-func (r *registry) newViewBookmarkDetailsUsecase(urls []string) (usecase.ViewBookmarkDetailsUsecaser, error) {
+func (r *registry) newViewBookmarkDetailsUsecase() (usecase.ViewBookmarkDetailsUsecaser, error) {
 	tracer, err := r.newTracer(r.appCode.String())
 	if err != nil {
 		return nil, err
@@ -292,7 +312,6 @@ func (r *registry) newViewBookmarkDetailsUsecase(urls []string) (usecase.ViewBoo
 		r.newLogger(),
 		tracer,
 		bookmarkDetailsRepo,
-		urls,
 	)
 	if err != nil {
 		return nil, err
@@ -300,7 +319,7 @@ func (r *registry) newViewBookmarkDetailsUsecase(urls []string) (usecase.ViewBoo
 	return usecase, nil
 }
 
-func (r *registry) newViewSummaryUsecase(urls []string, threshold uint) (usecase.ViewSummaryUsecaser, error) {
+func (r *registry) newViewSummaryUsecase() (usecase.ViewSummaryUsecaser, error) {
 	tracer, err := r.newTracer(r.appCode.String())
 	if err != nil {
 		return nil, err
@@ -309,17 +328,10 @@ func (r *registry) newViewSummaryUsecase(urls []string, threshold uint) (usecase
 	if err != nil {
 		return nil, err
 	}
-
-	if threshold == 0 {
-		// default
-		threshold = 50
-	}
 	usecase, err := usecase.NewViewSummaryUsecase(
 		r.newLogger(),
 		tracer,
 		summaryRepo,
-		urls,
-		threshold,
 	)
 	if err != nil {
 		return nil, err
@@ -327,9 +339,7 @@ func (r *registry) newViewSummaryUsecase(urls []string, threshold uint) (usecase
 	return usecase, nil
 }
 
-func (r *registry) newFetchUserBookmarkCountUsecase(
-	urls []string,
-) (usecase.FetchUserBookmarkCountUsecaser, error) {
+func (r *registry) newFetchUserBookmarkCountUsecase() (usecase.FetchUserBookmarkCountUsecaser, error) {
 	tracer, err := r.newTracer(r.appCode.String())
 	if err != nil {
 		return nil, err
@@ -344,7 +354,6 @@ func (r *registry) newFetchUserBookmarkCountUsecase(
 		userRepo,
 		r.newUserBookmarkCountFetcher(),
 		r.envConf.MaxWorkers, // maxWorker
-		urls,
 	)
 	if err != nil {
 		return nil, err

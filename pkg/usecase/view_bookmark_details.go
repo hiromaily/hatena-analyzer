@@ -11,36 +11,30 @@ import (
 )
 
 type ViewBookmarkDetailsUsecaser interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context, urls []string) error
 }
 
 type bookmarkDetailsUsecase struct {
 	logger              logger.Logger
 	tracer              tracer.Tracer
 	bookmarkDetailsRepo repository.BookmarkDetailsRepositorier
-	urls                []string
 }
 
 func NewViewBookmarkDetailsUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
 	bookmarkDetailsRepo repository.BookmarkDetailsRepositorier,
-	urls []string,
 ) (*bookmarkDetailsUsecase, error) {
 	// validation
-	if len(urls) == 0 {
-		return nil, errors.New("urls is empty")
-	}
 
 	return &bookmarkDetailsUsecase{
 		logger:              logger,
 		tracer:              tracer,
 		bookmarkDetailsRepo: bookmarkDetailsRepo,
-		urls:                urls,
 	}, nil
 }
 
-func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
+func (b *bookmarkDetailsUsecase) Execute(ctx context.Context, urls []string) error {
 	// must be closed dbClient
 	defer b.bookmarkDetailsRepo.Close(ctx)
 
@@ -49,6 +43,11 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 		span.End()
 		b.tracer.Close(ctx)
 	}()
+
+	// validation
+	if len(urls) == 0 {
+		return errors.New("urls is empty")
+	}
 
 	// get urls from DB if needed
 	// if len(b.urls) == 0 {
@@ -62,11 +61,11 @@ func (b *bookmarkDetailsUsecase) Execute(ctx context.Context) error {
 	// }
 
 	// get url info from DB
-	urlModels, err := b.bookmarkDetailsRepo.GetURLsByURLAddresses(ctx, b.urls)
+	urlModels, err := b.bookmarkDetailsRepo.GetURLsByURLAddresses(ctx, urls)
 	if err != nil {
 		b.logger.Error(
 			"failed to call bookmarkDetailsRepo.GetURLsByURLAddresses()",
-			"url_count", len(b.urls),
+			"url_count", len(urls),
 			"error", err,
 		)
 		return err

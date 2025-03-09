@@ -14,36 +14,28 @@ import (
 )
 
 type ViewTimeSeriesUsecaser interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context, urls []string) error
 }
 
 type timeSeriesUsecase struct {
 	logger         logger.Logger
 	tracer         tracer.Tracer
 	timeSeriesRepo repository.TimeSeriesRepositorier
-	urls           []string
 }
 
 func NewViewTimeSeriesUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
 	timeSeriesRepo repository.TimeSeriesRepositorier,
-	urls []string,
 ) (*timeSeriesUsecase, error) {
-	// validation
-	if len(urls) == 0 {
-		return nil, errors.New("urls is empty")
-	}
-
 	return &timeSeriesUsecase{
 		logger:         logger,
 		tracer:         tracer,
 		timeSeriesRepo: timeSeriesRepo,
-		urls:           urls,
 	}, nil
 }
 
-func (t *timeSeriesUsecase) Execute(ctx context.Context) error {
+func (t *timeSeriesUsecase) Execute(ctx context.Context, urls []string) error {
 	// must be closed dbClient
 	defer t.timeSeriesRepo.Close(ctx)
 
@@ -53,7 +45,12 @@ func (t *timeSeriesUsecase) Execute(ctx context.Context) error {
 		t.tracer.Close(ctx)
 	}()
 
-	for _, url := range t.urls {
+	// validation
+	if len(urls) == 0 {
+		return errors.New("urls is empty")
+	}
+
+	for _, url := range urls {
 		// get summaries from InfluxDB
 		summaries, err := t.timeSeriesRepo.ReadEntitySummaries(ctx, url)
 		if err != nil {

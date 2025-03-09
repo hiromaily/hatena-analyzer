@@ -15,24 +15,35 @@ import (
 //
 
 type viewSummaryCLIHandler struct {
-	logger  logger.Logger
-	usecase usecase.ViewSummaryUsecaser
+	logger    logger.Logger
+	usecase   usecase.ViewSummaryUsecaser
+	urls      []string
+	threshold uint
 }
 
 func NewViewSummaryCLIHandler(
 	logger logger.Logger,
 	usecase usecase.ViewSummaryUsecaser,
+	urls []string,
+	threshold uint,
 ) *viewSummaryCLIHandler {
+	if threshold == 0 {
+		// default
+		threshold = 50
+	}
+
 	return &viewSummaryCLIHandler{
-		logger:  logger,
-		usecase: usecase,
+		logger:    logger,
+		usecase:   usecase,
+		urls:      urls,
+		threshold: threshold,
 	}
 }
 
 func (v *viewSummaryCLIHandler) Handler(ctx context.Context) error {
 	v.logger.Info("viewSummaryCLIHandler Handler")
 
-	err := v.usecase.Execute(ctx)
+	err := v.usecase.Execute(ctx, v.urls, v.threshold)
 	if err != nil {
 		v.logger.Error("failed to view bookmark summary data", "error", err)
 	}
@@ -69,7 +80,10 @@ func (v *viewSummaryWebHandler) Handler(_ context.Context) error {
 func (v *viewSummaryWebHandler) WebHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	err := v.usecase.Execute(ctx)
+	// TODO:
+	// urls := c.Query("urls")
+	// threshold := c.Query("threshold")
+	err := v.usecase.Execute(ctx, nil, 50)
 	if err != nil {
 		v.logger.Error("failed to fetch bookmark data", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bookmark data"})

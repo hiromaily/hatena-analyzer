@@ -11,23 +11,19 @@ import (
 )
 
 type ViewSummaryUsecaser interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context, urls []string, threshold uint) error
 }
 
 type summaryUsecase struct {
 	logger      logger.Logger
 	tracer      tracer.Tracer
 	summaryRepo repository.SummaryRepositorier
-	urls        []string
-	threshold   uint
 }
 
 func NewViewSummaryUsecase(
 	logger logger.Logger,
 	tracer tracer.Tracer,
 	summaryRepo repository.SummaryRepositorier,
-	urls []string,
-	threshold uint,
 ) (*summaryUsecase, error) {
 	// validation
 	// if len(urls) == 0 {
@@ -38,12 +34,10 @@ func NewViewSummaryUsecase(
 		logger:      logger,
 		tracer:      tracer,
 		summaryRepo: summaryRepo,
-		urls:        urls,
-		threshold:   threshold,
 	}, nil
 }
 
-func (s *summaryUsecase) Execute(ctx context.Context) error {
+func (s *summaryUsecase) Execute(ctx context.Context, urls []string, threshold uint) error {
 	// must be closed dbClient
 	defer s.summaryRepo.Close(ctx)
 
@@ -56,18 +50,18 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 	// get urls from DB if needed
 	var entityURLs []entities.URL
 	var err error
-	if len(s.urls) == 0 {
+	if len(urls) == 0 {
 		entityURLs, err = s.summaryRepo.GetAllURLs(ctx)
 		if err != nil {
 			s.logger.Error("failed to call bookmarkRepo.GetAllURLs()", "error", err)
 			return err
 		}
 	} else {
-		entityURLs, err = s.summaryRepo.GetURLsByURLAddresses(ctx, s.urls)
+		entityURLs, err = s.summaryRepo.GetURLsByURLAddresses(ctx, urls)
 		if err != nil {
 			s.logger.Error(
 				"failed to call bookmarkDetailsRepo.GetURLsByURLAddresses()",
-				"url_count", len(s.urls),
+				"url_count", len(urls),
 				"error", err,
 			)
 			return err
@@ -76,9 +70,9 @@ func (s *summaryUsecase) Execute(ctx context.Context) error {
 
 	s.logger.Info("url count", "count", len(entityURLs))
 
-	fmt.Printf("[Private user rate over threshold: %d]\n", s.threshold)
+	fmt.Printf("[Private user rate over threshold: %d]\n", threshold)
 	for _, entityURL := range entityURLs {
-		if entityURL.PrivateUserRate > float64(s.threshold) {
+		if entityURL.PrivateUserRate > float64(threshold) {
 			s.logger.Info(
 				"url info",
 				"url", entityURL.Address,

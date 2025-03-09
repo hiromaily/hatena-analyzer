@@ -17,7 +17,7 @@ import (
 )
 
 type FetchBookmarkUsecaser interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context, urls []string, isVerbose bool) error
 }
 
 type fetchBookmarkUsecase struct {
@@ -26,8 +26,6 @@ type fetchBookmarkUsecase struct {
 	bookmarkRepo      repository.FetchBookmarkRepositorier
 	entityJSONFetcher fetcher.EntityJSONFetcher
 	maxWorker         int64 // for semaphore
-	urls              []string
-	isVerbose         bool
 }
 
 // TODO
@@ -40,8 +38,6 @@ func NewFetchBookmarkUsecase(
 	bookmarkRepo repository.FetchBookmarkRepositorier,
 	entityJSONFetcher fetcher.EntityJSONFetcher,
 	maxWorker int64,
-	urls []string,
-	isVerbose bool,
 ) (*fetchBookmarkUsecase, error) {
 	// validation
 	if maxWorker == 0 {
@@ -54,14 +50,12 @@ func NewFetchBookmarkUsecase(
 		bookmarkRepo:      bookmarkRepo,
 		entityJSONFetcher: entityJSONFetcher,
 		maxWorker:         maxWorker,
-		urls:              urls,
-		isVerbose:         isVerbose,
 	}, nil
 }
 
 // Fetch bookmark users, title, count related given URLs using Hatena entity API and save data to DB
 
-func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
+func (f *fetchBookmarkUsecase) Execute(ctx context.Context, urls []string, isVerbose bool) error {
 	// must be closed dbClient
 	defer f.bookmarkRepo.Close(ctx)
 
@@ -73,7 +67,7 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 
 	// get urls from DB if needed
 	var entityURLs []entities.URL
-	if len(f.urls) == 0 {
+	if len(urls) == 0 {
 		var err error
 		entityURLs, err = f.bookmarkRepo.GetAllURLs(ctx)
 		if err != nil {
@@ -81,18 +75,19 @@ func (f *fetchBookmarkUsecase) Execute(ctx context.Context) error {
 			return err
 		}
 	} else {
-		for _, url := range f.urls {
+		for _, url := range urls {
 			// TODO: validate URL
 			entityURLs = append(entityURLs, entities.URL{Address: url})
 		}
 	}
 
-	return f.concurrentExecuter(ctx, entityURLs)
+	return f.concurrentExecuter(ctx, entityURLs, isVerbose)
 }
 
 func (f *fetchBookmarkUsecase) concurrentExecuter(
 	ctx context.Context,
 	entityURLs []entities.URL,
+	isVerbose bool,
 ) error {
 	sem := semaphore.NewWeighted(f.maxWorker)
 	var wg sync.WaitGroup
@@ -161,7 +156,7 @@ func (f *fetchBookmarkUsecase) concurrentExecuter(
 			}
 
 			// Print data
-			if f.isVerbose {
+			if isVerbose {
 				f.print(existingBookmark)
 			}
 		}(entityURL)

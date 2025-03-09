@@ -93,6 +93,8 @@ view-bookmark-details:
 .PHONY: view-summary
 view-summary:
 	go run ./cmd/analyzer/ view-summary --threshold=60
+	#go run ./cmd/analyzer/ view-summary --urls=https://www.google.co.jp/,https://chatgpt.com/ --threshold=60
+
 
 # Run all executions
 .PHONY: fetch-all

@@ -14,7 +14,7 @@ import (
 )
 
 type FetchUserBookmarkCountUsecaser interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context, urls []string) error
 }
 
 type fetchUserBookmarkCountUsecase struct {
@@ -23,7 +23,6 @@ type fetchUserBookmarkCountUsecase struct {
 	fetchUserRepo      repository.FetchUserRepositorier
 	userBMCountFetcher fetcher.UserBookmarkCountFetcher
 	maxWorker          int64 // for semaphore
-	urls               []string
 }
 
 func NewFetchUserBookmarkCountUsecase(
@@ -32,7 +31,6 @@ func NewFetchUserBookmarkCountUsecase(
 	fetchUserRepo repository.FetchUserRepositorier,
 	userBMCountFetcher fetcher.UserBookmarkCountFetcher,
 	maxWorker int64,
-	urls []string,
 ) (*fetchUserBookmarkCountUsecase, error) {
 	if maxWorker == 0 {
 		return nil, errors.New("maxWorker is 0")
@@ -44,14 +42,13 @@ func NewFetchUserBookmarkCountUsecase(
 		fetchUserRepo:      fetchUserRepo,
 		userBMCountFetcher: userBMCountFetcher,
 		maxWorker:          maxWorker,
-		urls:               urls,
 	}, nil
 }
 
 // Fetch user's bookmark count of given urls by scraping
 // Then save data to DB
 
-func (f *fetchUserBookmarkCountUsecase) Execute(ctx context.Context) error {
+func (f *fetchUserBookmarkCountUsecase) Execute(ctx context.Context, urls []string) error {
 	// must be closed dbClient
 	defer f.fetchUserRepo.Close(ctx)
 
@@ -64,14 +61,14 @@ func (f *fetchUserBookmarkCountUsecase) Execute(ctx context.Context) error {
 	// get user list from DB
 	var users []string
 	var err error
-	if len(f.urls) == 0 {
+	if len(urls) == 0 {
 		users, err = f.fetchUserRepo.GetUserNames(ctx)
 		if err != nil {
 			f.logger.Error("failed to get users", "error", err)
 			return err
 		}
 	} else {
-		users, err = f.fetchUserRepo.GetUserNamesByURLS(ctx, f.urls)
+		users, err = f.fetchUserRepo.GetUserNamesByURLS(ctx, urls)
 		if err != nil {
 			f.logger.Error("failed to get users by urls", "error", err)
 			return err

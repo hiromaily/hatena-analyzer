@@ -20,3 +20,8 @@ go run ./cmd/analyzer/ -h
 - `view-timeseries`: View time series of bookmarked entity
 - `view-bookmark-details`: View details of bookmarked entity
 - `view-summary`: View summary of bookmarked entity
+
+## TODO
+
+- [x] CLI Interface
+- [ ] Web Interface
