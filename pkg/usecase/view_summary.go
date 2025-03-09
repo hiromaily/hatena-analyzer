@@ -38,6 +38,8 @@ func NewViewSummaryUsecase(
 }
 
 func (s *summaryUsecase) Execute(ctx context.Context, urls []string, threshold uint) error {
+	s.logger.Info("summaryUsecase Execute", "urls length", len(urls))
+
 	// must be closed dbClient
 	// defer s.summaryRepo.Close(ctx)
 

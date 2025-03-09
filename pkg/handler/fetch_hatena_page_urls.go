@@ -68,6 +68,8 @@ func (f *fetchHatenaPageURLsWebHandler) Handler(_ context.Context) error {
 }
 
 func (f *fetchHatenaPageURLsWebHandler) WebHandler(c *gin.Context) {
+	f.logger.Info("fetchHatenaPageURLsWebHandler WebHandler")
+
 	ctx := c.Request.Context()
 
 	err := f.usecase.Execute(ctx)

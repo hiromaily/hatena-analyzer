@@ -71,6 +71,8 @@ func (v *viewTimeSeriesWebHandler) Handler(_ context.Context) error {
 }
 
 func (v *viewTimeSeriesWebHandler) WebHandler(c *gin.Context) {
+	v.logger.Info("viewTimeSeriesWebHandler WebHandler")
+
 	ctx := c.Request.Context()
 
 	// request

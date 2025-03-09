@@ -36,6 +36,8 @@ func NewViewTimeSeriesUsecase(
 }
 
 func (t *timeSeriesUsecase) Execute(ctx context.Context, urls []string) error {
+	t.logger.Info("timeSeriesUsecase Execute", "urls length", len(urls))
+
 	// must be closed dbClient
 	// defer t.timeSeriesRepo.Close(ctx)
 

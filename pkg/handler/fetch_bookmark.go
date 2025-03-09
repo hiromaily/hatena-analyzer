@@ -75,6 +75,8 @@ func (f *fetchBookmarkWebHandler) Handler(_ context.Context) error {
 }
 
 func (f *fetchBookmarkWebHandler) WebHandler(c *gin.Context) {
+	f.logger.Info("fetchBookmarkWebHandler WebHandler")
+
 	ctx := c.Request.Context()
 
 	// request

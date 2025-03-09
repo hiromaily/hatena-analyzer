@@ -79,6 +79,8 @@ func (v *viewSummaryWebHandler) Handler(_ context.Context) error {
 }
 
 func (v *viewSummaryWebHandler) WebHandler(c *gin.Context) {
+	v.logger.Info("viewSummaryWebHandler WebHandler")
+
 	ctx := c.Request.Context()
 
 	// request

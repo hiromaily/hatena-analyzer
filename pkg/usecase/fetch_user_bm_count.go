@@ -49,6 +49,8 @@ func NewFetchUserBookmarkCountUsecase(
 // Then save data to DB
 
 func (f *fetchUserBookmarkCountUsecase) Execute(ctx context.Context, urls []string) error {
+	f.logger.Info("fetchUserBookmarkCountUsecase Execute", "urls length", len(urls))
+
 	// must be closed dbClient
 	// defer f.fetchUserRepo.Close(ctx)
 

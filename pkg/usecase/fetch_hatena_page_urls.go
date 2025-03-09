@@ -48,6 +48,8 @@ func NewFetchHatenaPageURLsUsecase(
 // Fetch bookmark users, title, count related given URLs using Hatena entity API and save data to DB
 
 func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
+	f.logger.Info("fetchHatenaPageURLsUsecase Execute")
+
 	// must be closed dbClient
 	// defer f.fetchURLRepo.Close(ctx)
 

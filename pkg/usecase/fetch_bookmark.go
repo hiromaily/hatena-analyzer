@@ -56,6 +56,8 @@ func NewFetchBookmarkUsecase(
 // Fetch bookmark users, title, count related given URLs using Hatena entity API and save data to DB
 
 func (f *fetchBookmarkUsecase) Execute(ctx context.Context, urls []string, isVerbose bool) error {
+	f.logger.Info("fetchBookmarkUsecase Execute", "urls length", len(urls))
+
 	// must be closed dbClient
 	// defer f.bookmarkRepo.Close(ctx)
 

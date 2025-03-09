@@ -35,6 +35,8 @@ func NewViewBookmarkDetailsUsecase(
 }
 
 func (b *bookmarkDetailsUsecase) Execute(ctx context.Context, urls []string) error {
+	b.logger.Info("bookmarkDetailsUsecase Execute", "urls length", len(urls))
+
 	// must be closed dbClient
 	// defer b.bookmarkDetailsRepo.Close(ctx)
 
