@@ -9,6 +9,8 @@ Analyze bookmarked entity on [Hatena](https://b.hatena.ne.jp/hotentry/all)
 
 ## Commands
 
+### use as CLI
+
 ```sh
 # Help
 go run ./cmd/analyzer/ -h
@@ -21,7 +23,13 @@ go run ./cmd/analyzer/ -h
 - `view-bookmark-details`: View details of bookmarked entity
 - `view-summary`: View summary of bookmarked entity
 
+### use as Web Server
+
+```sh
+go run ./cmd/analyzer/ web --port=8080
+```
+
 ## TODO
 
 - [x] CLI Interface
-- [ ] Web Interface
+- [x] Web Interface

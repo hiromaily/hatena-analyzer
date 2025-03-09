@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -80,10 +81,16 @@ func (v *viewSummaryWebHandler) Handler(_ context.Context) error {
 func (v *viewSummaryWebHandler) WebHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// TODO:
-	// urls := c.Query("urls")
+	// request
+	urlString := c.DefaultQuery("urls", "")
+	var urls []string
+	if urlString != "" {
+		urls = strings.Split(urlString, ",")
+		v.logger.Info("given URLs", "urls", urls, "len", len(urls))
+	}
+
 	// threshold := c.Query("threshold")
-	err := v.usecase.Execute(ctx, nil, 50)
+	err := v.usecase.Execute(ctx, urls, 50)
 	if err != nil {
 		v.logger.Error("failed to fetch bookmark data", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch bookmark data"})

@@ -109,3 +109,7 @@ view-all: view-timeseries view-bookmark-details view-summary
 .PHONY: web
 web:
 	go run ./cmd/analyzer/ web --port=8080
+
+request:
+	curl http://localhost:8080/api/v1/fetch-page-url
+	curl http://localhost:8080/api/v1/fetch-bookmark?url=https://www.google.co.jp/,https://chatgpt.com/

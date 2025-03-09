@@ -125,41 +125,43 @@ func (r *registry) createCLIHandler() (handler.Handler, error) {
 }
 
 func (r *registry) createWebHandler(ginEngine *gin.Engine) error {
+	v1Router := ginEngine.Group("/api/v1")
+
 	handler, err := r.newFetchHatenaPageURLsHandler()
 	if err != nil {
 		return err
 	}
-	ginEngine.GET("/fetch-page-url", handler.WebHandler)
+	v1Router.GET("/fetch-page-url", handler.WebHandler)
 
 	handler, err = r.newFetchBookmarkHandler()
 	if err != nil {
 		return err
 	}
-	ginEngine.GET("/fetch-bookmark", handler.WebHandler)
+	v1Router.GET("/fetch-bookmark", handler.WebHandler)
 
 	handler, err = r.newFetchUserBookmarkCountHandler()
 	if err != nil {
 		return err
 	}
-	ginEngine.GET("/fetch-user-bookmark-count", handler.WebHandler)
+	v1Router.GET("/fetch-user-bookmark-count", handler.WebHandler)
 
 	handler, err = r.newViewTimeSeriesHanlder()
 	if err != nil {
 		return err
 	}
-	ginEngine.GET("/view-time-series", handler.WebHandler)
+	v1Router.GET("/view-time-series", handler.WebHandler)
 
 	handler, err = r.newViewBookmarkDetailsHanlder()
 	if err != nil {
 		return err
 	}
-	ginEngine.GET("/view-bookmark-details", handler.WebHandler)
+	v1Router.GET("/view-bookmark-details", handler.WebHandler)
 
 	handler, err = r.newViewSummaryHanlder()
 	if err != nil {
 		return err
 	}
-	ginEngine.GET("/view-summary", handler.WebHandler)
+	v1Router.GET("/view-summary", handler.WebHandler)
 
 	return nil
 }
