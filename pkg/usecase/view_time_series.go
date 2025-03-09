@@ -37,7 +37,7 @@ func NewViewTimeSeriesUsecase(
 
 func (t *timeSeriesUsecase) Execute(ctx context.Context, urls []string) error {
 	// must be closed dbClient
-	defer t.timeSeriesRepo.Close(ctx)
+	// defer t.timeSeriesRepo.Close(ctx)
 
 	_, span := t.tracer.NewSpan(ctx, "timeSeriesUsecase:Execute()")
 	defer func() {

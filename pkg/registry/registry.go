@@ -36,12 +36,14 @@ type registry struct {
 	isCLI bool
 
 	// repositories
+	closerRepo          repository.CloserRepositorier
 	fetchBookmarkRepo   repository.FetchBookmarkRepositorier
 	fetchURLRepo        repository.FetchURLRepositorier
 	fetchUserRepo       repository.FetchUserRepositorier
 	timeSeriesRepo      repository.TimeSeriesRepositorier
 	bookmarkDetailsRepo repository.BookmarkDetailsRepositorier
 	summaryRepo         repository.SummaryRepositorier
+
 	// db clients
 	postgresClient  *rdb.SqlcPostgresClient
 	influxdbClient  influxdb2.Client
@@ -75,6 +77,11 @@ func NewRegistry(
 }
 
 func (r *registry) InitializeApp() (app.Application, error) {
+	_, err := r.newCloserRepository()
+	if err != nil {
+		return nil, err
+	}
+
 	if r.isCLI {
 		// CLI Application
 		handler, err := r.createCLIHandler()
@@ -95,6 +102,13 @@ func (r *registry) InitializeApp() (app.Application, error) {
 
 func (r *registry) Logger() logger.Logger {
 	return r.newLogger()
+}
+
+func (r *registry) Close() error {
+	if r.closerRepo != nil {
+		r.closerRepo.Close(context.Background())
+	}
+	return nil
 }
 
 func (r *registry) createCLIHandler() (handler.Handler, error) {
@@ -411,6 +425,30 @@ func (r *registry) newFetchUserBookmarkCountUsecase() (usecase.FetchUserBookmark
 ///
 /// Repositories
 ///
+
+func (r *registry) newCloserRepository() (repository.CloserRepositorier, error) {
+	pgQuery, err := r.newPostgresQueries()
+	if err != nil {
+		return nil, err
+	}
+	influxdbQuery, err := r.newInfluxDBQueries()
+	if err != nil {
+		return nil, err
+	}
+	mongodbQuery, err := r.newMongoDBQueries()
+	if err != nil {
+		return nil, err
+	}
+	if r.closerRepo == nil {
+		r.closerRepo = repository.NewCloserRepository(
+			r.newLogger(),
+			pgQuery,
+			influxdbQuery,
+			mongodbQuery,
+		)
+	}
+	return r.closerRepo, nil
+}
 
 func (r *registry) newBookmarkRepository() (repository.FetchBookmarkRepositorier, error) {
 	pgQuery, err := r.newPostgresQueries()

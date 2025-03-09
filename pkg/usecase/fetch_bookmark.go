@@ -57,7 +57,7 @@ func NewFetchBookmarkUsecase(
 
 func (f *fetchBookmarkUsecase) Execute(ctx context.Context, urls []string, isVerbose bool) error {
 	// must be closed dbClient
-	defer f.bookmarkRepo.Close(ctx)
+	// defer f.bookmarkRepo.Close(ctx)
 
 	_, span := f.tracer.NewSpan(ctx, "fetchBookmarkUsecase:Execute()")
 	defer func() {

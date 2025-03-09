@@ -8,4 +8,5 @@ import (
 type Registry interface {
 	InitializeApp() (app.Application, error)
 	Logger() logger.Logger
+	Close() error
 }

@@ -48,7 +48,9 @@ func main() {
 	// Execute application
 	err = app.Run()
 	if err != nil {
+		reg.Close()
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	reg.Close()
 }

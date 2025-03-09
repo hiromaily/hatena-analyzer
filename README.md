@@ -1,6 +1,6 @@
 # hatena-analyzer
 
-Analyze bookmarked entity on [Hatena](https://b.hatena.ne.jp/hotentry/all)
+Analyze bookmarked entity on [Hatena](https://b.hatena.ne.jp/hotentry/all). It works both CLI mode and Web server mode.
 
 ## Requirements
 

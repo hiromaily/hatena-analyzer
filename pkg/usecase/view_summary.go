@@ -39,7 +39,7 @@ func NewViewSummaryUsecase(
 
 func (s *summaryUsecase) Execute(ctx context.Context, urls []string, threshold uint) error {
 	// must be closed dbClient
-	defer s.summaryRepo.Close(ctx)
+	// defer s.summaryRepo.Close(ctx)
 
 	_, span := s.tracer.NewSpan(ctx, "summaryUsecase:Execute()")
 	defer func() {

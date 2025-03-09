@@ -50,7 +50,7 @@ func NewFetchUserBookmarkCountUsecase(
 
 func (f *fetchUserBookmarkCountUsecase) Execute(ctx context.Context, urls []string) error {
 	// must be closed dbClient
-	defer f.fetchUserRepo.Close(ctx)
+	// defer f.fetchUserRepo.Close(ctx)
 
 	_, span := f.tracer.NewSpan(ctx, "fetchUserBookmarkCountUsecase:Execute()")
 	defer func() {

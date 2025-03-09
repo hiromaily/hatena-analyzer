@@ -36,7 +36,7 @@ func NewViewBookmarkDetailsUsecase(
 
 func (b *bookmarkDetailsUsecase) Execute(ctx context.Context, urls []string) error {
 	// must be closed dbClient
-	defer b.bookmarkDetailsRepo.Close(ctx)
+	// defer b.bookmarkDetailsRepo.Close(ctx)
 
 	_, span := b.tracer.NewSpan(ctx, "bookmarkDetailsUsecase:Execute()")
 	defer func() {

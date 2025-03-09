@@ -49,7 +49,7 @@ func NewFetchHatenaPageURLsUsecase(
 
 func (f *fetchHatenaPageURLsUsecase) Execute(ctx context.Context) error {
 	// must be closed dbClient
-	defer f.fetchURLRepo.Close(ctx)
+	// defer f.fetchURLRepo.Close(ctx)
 
 	_, span := f.tracer.NewSpan(ctx, "fetchURLsUsecase:Execute()")
 	defer func() {
