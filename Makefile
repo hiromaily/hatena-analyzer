@@ -115,3 +115,6 @@ request:
 	curl http://localhost:8080/api/v1/fetch-page-url
 	curl 'http://localhost:8080/api/v1/fetch-bookmark?urls=https://www.google.co.jp/,https://chatgpt.com/'
 	curl http://localhost:8080/api/v1/fetch-user-bookmark-count
+	curl 'http://localhost:8080/api/v1/view-time-series?urls=https://www.google.co.jp/,https://chatgpt.com/'
+	curl 'http://localhost:8080/api/v1/view-bookmark-details?urls=https://www.google.co.jp/,https://chatgpt.com/'
+	curl 'http://localhost:8080/api/v1/view-summary?urls=https://www.google.co.jp/,https://chatgpt.com/'

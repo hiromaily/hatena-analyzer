@@ -33,3 +33,5 @@ go run ./cmd/analyzer/ web --port=8080
 
 - [x] CLI Interface
 - [x] Web Interface
+- [ ] Web Handler response each
+- [ ] analyze endpoint for `fetch-bookmark`, `view-bookmark-details`, `view-summary` at once
