@@ -102,3 +102,10 @@ fetch-all: fetch-page-urls fetch-bookmark fetch-user-bm-count
 
 .PHONY: view-all
 view-all: view-timeseries view-bookmark-details view-summary
+
+#------------------------------------------------------------------------------
+# Execution as web server
+#------------------------------------------------------------------------------
+.PHONY: web
+web:
+	go run ./cmd/analyzer/ web --port=8080

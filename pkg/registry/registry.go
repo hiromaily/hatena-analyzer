@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -83,9 +84,13 @@ func (r *registry) InitializeApp() (app.Application, error) {
 		app := app.NewCLIApp(handler)
 		return app, nil
 	}
-	// TODO: Web Application
-
-	return nil, errors.New("web application is not implemented yet")
+	// Web Application
+	ginEngine := gin.Default()
+	if err := r.createWebHandler(ginEngine); err != nil {
+		return nil, err
+	}
+	app := app.NewWebApp(ginEngine, r.args.WebCommand.Port)
+	return app, nil
 }
 
 func (r *registry) Logger() logger.Logger {
@@ -117,6 +122,46 @@ func (r *registry) createCLIHandler() (handler.Handler, error) {
 		return nil, errors.New("appCode is not found")
 	}
 	return handler, nil
+}
+
+func (r *registry) createWebHandler(ginEngine *gin.Engine) error {
+	handler, err := r.newFetchHatenaPageURLsHandler()
+	if err != nil {
+		return err
+	}
+	ginEngine.GET("/fetch-page-url", handler.WebHandler)
+
+	handler, err = r.newFetchBookmarkHandler()
+	if err != nil {
+		return err
+	}
+	ginEngine.GET("/fetch-bookmark", handler.WebHandler)
+
+	handler, err = r.newFetchUserBookmarkCountHandler()
+	if err != nil {
+		return err
+	}
+	ginEngine.GET("/fetch-user-bookmark-count", handler.WebHandler)
+
+	handler, err = r.newViewTimeSeriesHanlder()
+	if err != nil {
+		return err
+	}
+	ginEngine.GET("/view-time-series", handler.WebHandler)
+
+	handler, err = r.newViewBookmarkDetailsHanlder()
+	if err != nil {
+		return err
+	}
+	ginEngine.GET("/view-bookmark-details", handler.WebHandler)
+
+	handler, err = r.newViewSummaryHanlder()
+	if err != nil {
+		return err
+	}
+	ginEngine.GET("/view-summary", handler.WebHandler)
+
+	return nil
 }
 
 ///

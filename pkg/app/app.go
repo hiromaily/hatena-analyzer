@@ -2,6 +2,9 @@ package app
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/hiromaily/hatena-analyzer/pkg/handler"
 )
@@ -29,14 +32,18 @@ func (c *cliApp) Run() error {
 ///
 
 type webApp struct {
+	ginEngine *gin.Engine
+	port      uint
 }
 
-func NewWebApp() Application {
+func NewWebApp(ginEngine *gin.Engine, port uint) Application {
 	// create web application
-
-	return &webApp{}
+	if port == 0 {
+		port = 8080
+	}
+	return &webApp{ginEngine: ginEngine, port: port}
 }
 
 func (c *webApp) Run() error {
-	return nil
+	return c.ginEngine.Run(fmt.Sprintf(":%d", c.port))
 }
